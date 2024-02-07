@@ -22,7 +22,7 @@ class read_input:
         """
     
     def read_xlsx(self, path):
-        all_input_pars = pd.read_excel(path, sheet_name="main", index_col=0)
+        all_input_pars = pd.read_excel(path, sheet_name="Main", index_col=0)
         all_input_pars.dropna(axis=0, how='all', inplace=True)
         cutoff_index = all_input_pars.columns.get_loc("Units")
         all_input_pars = all_input_pars.get(all_input_pars.columns[range(cutoff_index)])

@@ -76,7 +76,10 @@ def order_n_pauli_strs(m: int, n: int) -> list[str]:
     >>> order_n_pauli_strs(3, 1)
     [('I', 'I', 'I'), ('I', 'I', 'X'), ('I', 'I', 'Y'), ('I', 'I', 'Z'), ('I', 'X', 'I'), ('I', 'Y', 'I'), ('I', 'Z', 'I'), ('X', 'I', 'I'), ('Y', 'I', 'I'), ('Z', 'I', 'I')]
     """
-
+    
+    if m <= n :
+        return all_pauli_strs(m)
+    
     pauli_strs = []
     for k in range(n + 1):
         pauli_templates = ["XYZ" for i in range(k)] + ["I" for i in range(m - k)]

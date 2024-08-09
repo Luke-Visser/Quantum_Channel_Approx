@@ -4,7 +4,7 @@ import numpy as np
 import qutip as qt
 
 from q_channel_approx.physics_defns.target_systems import TargetSystem
-from q_channel_approx.physics_defns.hamiltonians import create_hamiltonian
+from q_channel_approx.physics_defns.hamiltonians import create_hamiltonian, create_jump_opers
 from q_channel_approx.physics_defns.initial_states import rho_rand_haar
 
 
@@ -72,15 +72,10 @@ def random_rho0s(m: int, L: int, seed: int = None) -> list[qt.Qobj]:
     Returns:
         list[qt.Qobj]: list of `L` randomly generated initial states.
     """
-
-    if seed is None:
-        seed = np.random.randint(10**5)
-        print(f"random_rho0s: setting {seed=}")
-
-    rng = np.random.default_rng(seed=seed)
-
-    seeds = [rng.integers(0, 10**5) for _ in range(L)]
-    rho0s = [rho_rand_haar(m=m, seed=seed) for seed in seeds]
+    
+    rho_rand_haar(m=m, seed=seed)
+    
+    rho0s = [rho_rand_haar(m=m) for _ in range(L)]
 
     return rho0s
 
@@ -90,7 +85,6 @@ def solve_lindblad_rho0(
     delta_t: float,
     N: int,
     s: TargetSystem,
-    jump_opers: list[qt.Qobj],
 ) -> tuple[np.ndarray, np.ndarray]:
     """Evolve a single initial state `rho0` for `N` timesteps of `delta_t` according the
     Lindblad equation with Hamiltonian defined by `s` and using
@@ -109,6 +103,7 @@ def solve_lindblad_rho0(
     """
 
     H = create_hamiltonian(s)
+    jump_opers = create_jump_opers(s)
 
     ts = np.arange(N + 1) * delta_t
 
@@ -122,7 +117,6 @@ def solve_lindblad_rho0s(
     delta_t: float,
     N: int,
     s: TargetSystem,
-    jump_opers: list[qt.Qobj],
 ) -> tuple[np.ndarray, np.ndarray]:
     """Evolve all `rho0s` for `N` timesteps of `delta_t` according the
     Lindblad equation with Hamiltonian defined by `s` and using
@@ -143,6 +137,7 @@ def solve_lindblad_rho0s(
     """
 
     H = create_hamiltonian(s)
+    jump_opers = create_jump_opers(s)
 
     L = len(rho0s)
     dims, _ = rho0s[0].shape

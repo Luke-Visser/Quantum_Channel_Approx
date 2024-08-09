@@ -114,6 +114,19 @@ def tfim_hamiltonian(m: int, j_en: float, h_en: float) -> qt.Qobj:
             ),
             dims=[[2, 2, 2], [2, 2, 2]],
         )
+    
+def decay_jump_oper(m: int, gammas) -> list[qt.Qobj]:
+    single_decay = np.array([[0,1],[0,0]])
+    decay_ops = [np.zeros([2**m,2**m]) for _ in range(m)]
+    for i in range(m):
+        decay_ops[i] = gammas[i] * np.kron(np.kron(np.eye(2**i), single_decay),np.eye(2**(m-i-1)))
+    decay_ops = [qt.Qobj(decay_ops[i], dims = [[2]*m,[2]*m]) for i in range(m)]
+    return decay_ops
+        
+    
+def nlevel_jump_oper(m, gammas):
+    print('nlevel to be implemented')
+    pass
 
 
 def _I_hamiltonian(s: NothingSystem) -> qt.Qobj:
@@ -141,6 +154,16 @@ def _decay_hamiltonian(s: DecaySystem) -> qt.Qobj:
 
     return decay_hamiltonian(m=m, omegas=omegas, ryd_interaction=ryd_interaction)
 
+def _decay_jump_oper(s: TargetSystem):
+    m = s.m
+    gammas = s.gammas
+    return decay_jump_oper(m=m, gammas = gammas)
+
+def _nlevel_jump_oper(s: TargetSystem) -> list[qt.Qobj]:
+    m = s.m
+    gammas = s.gammas
+    return nlevel_jump_oper(m=m, gammas = gammas)
+
 
 def create_hamiltonian(s: TargetSystem) -> qt.Qobj:
     """Convenience function that creates the appropriate
@@ -154,6 +177,22 @@ def create_hamiltonian(s: TargetSystem) -> qt.Qobj:
 
     if isinstance(s, NothingSystem):
         return _I_hamiltonian(s)
+    
+def create_jump_opers(s: TargetSystem) -> list[qt.Qobj]:
+    """Convenience function that creates the appropriate
+    jump operators from settings."""
+
+    if isinstance(s, (DecaySystem, TFIMSystem)):
+        return _decay_jump_oper(s)
+    
+    if isinstance(s, NothingSystem):
+        return None
+
+# =============================================================================
+#     if isinstance(s, nLevelSystem):
+#         return _nlevel_jump_oper(s)
+# =============================================================================
+
 
 
 if __name__ == "__main__":

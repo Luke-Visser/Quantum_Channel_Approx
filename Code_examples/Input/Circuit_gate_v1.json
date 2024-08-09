@@ -1,0 +1,13 @@
+{
+    "m": 1,
+    "layout": "triangular",
+    "distance": 0.9,
+    "cutoff": 1,
+    "observables": "order 2",
+    "n_rhos": 10,
+    "n_depth": 1,
+    "seed": 1,
+    "method": "HEA",
+    "circuit_depth": 4,
+    "ent_type": "ryd-vdw"
+}

@@ -46,33 +46,27 @@ def rho_fully_mixed(m: int) -> qt.Qobj:
     # create rho
     return qt.Qobj(np.eye(2**m) / 2**m, dims=[[2] * m, [2] * m])
 
-
-def rho_rand_haar(m: int, seed: int = None) -> qt.Qobj:
-    """Create density matrix from Haar state for ``m`` qubits.
-
-    Haar measure is a uniform probability distribution over the Bloch sphere.
-
-    Reference:
-        https://pennylane.ai/qml/demos/tutorial_haar_measure/
-
-    >>> rho_rand_haar( m=3, seed=42 ) # doctest:+ELLIPSIS
-    Quantum object: dims=[[2, 2, 2], [2, 2, 2]], shape=(8, 8), type='oper', dtype=Dense, isherm=True
-    Qobj data =
-    ...
+def rho_rand_haar(m: int, seed:int = None) -> qt.Qobj:
+    """Create density matrix from pure Haar state for ``m`` qubits.
     """
-    if seed is None:
-        seed = np.random.default_rng().integers(10**5)
-        print(f"rho_rand_haar: {seed=}")
-    # create rho
-    random_ket = qt.rand_ket(
-        dimensions=[[2] * m, [1] * m], seed=seed, distribution="haar"
-    )
-    random_bra = random_ket.dag()
-
-    rho = random_ket * random_bra
-    rho.dims = [[2] * m, [2] * m]
-
+    ket = qt.rand_ket_haar(dims=[[2]*m,[1]*m],seed=seed)
+    rho = ket * ket.dag()
+    rho.dims = [[2]*m,[2]*m]
     return rho
+
+
+def rho_rand_haar_mixed(m: int, seed:int = None, rank:int = None) -> qt.Qobj:
+    """Create density matrix from mixed Haar state for ``m`` qubits.
+        m : nr qubits
+        seed : seed of qutip module
+    If rank is None, return full-rank density matrix.
+    """
+    if seed !=None:
+        qt.rand_ket(N=2, seed = seed)
+    rho = qt.rand_dm_ginibre(N = 2**m, rank = rank, dims = [[2]*m,[2]*m])
+    
+    return rho
+
 
 
 if __name__ == "__main__":

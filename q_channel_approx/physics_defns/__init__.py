@@ -3,6 +3,8 @@ from q_channel_approx.physics_defns.hamiltonians import (
     decay_hamiltonian,
     tfim_hamiltonian,
     create_hamiltonian,
+    nlevel_jump_oper,
+    decay_jump_oper,
 )
 from q_channel_approx.physics_defns.initial_states import (
     rho_fully_mixed,
@@ -23,4 +25,5 @@ from q_channel_approx.physics_defns.target_systems import (
     DecaySystem,
     TFIMSystem,
     NothingSystem,
+    nLevelSystem,
 )

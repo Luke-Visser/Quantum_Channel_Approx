@@ -4,6 +4,9 @@ Supported target systems:
     Rabi oscillation with decay (DecaySystem),
     transverse field Ising model (TFIMSystem),
     Hamiltonian is the identity (NothingSystem) (mainly used for testing)
+    
+    to add:
+    2^n level system mapped onto 2 qubits
 """
 
 from dataclasses import dataclass, KW_ONLY
@@ -69,6 +72,9 @@ class DecaySystem(TargetSystem):
 
     omegas (tuple[float]): the Rabi frequency of the qubits
     Note: length must equal number of qubits m
+    
+    gammas (tuple[float]): the decay strength of the qubits
+    Note: length must equal number of qubits m
 
     >>> DecaySystem(ryd_interaction=0.2,
     ...               omegas=(0.2), # not a tuple! expects (0.2,)
@@ -88,15 +94,21 @@ class DecaySystem(TargetSystem):
     ryd_interaction: float
 
     omegas: tuple[float]
+    gammas: tuple[float]
 
     def validate_omegas(self):
         """Validate that enough omegas have been provided to model m qubit target system."""
         if self.verbose:
-            print("    validating omegas...")
+            print("    validating omegas and gammas...")
 
         if self.m != len(self.omegas):
             raise ValueError(
                 f"wrong amount of omegas for {self.m} qubit target system: {self.omegas}"
+            )
+            
+        if self.m != len(self.gammas):
+            raise ValueError(
+                f"wrong amount of gammas for {self.m} qubit target system: {self.gammas}"
             )
 
 
@@ -118,6 +130,8 @@ class TFIMSystem(TargetSystem):
 
     j_en: float
     h_en: float
+    gammas: tuple[float]
+
 
 
 @dataclass
@@ -132,6 +146,20 @@ class NothingSystem(TargetSystem):
     verbose (optional: bool): inform user about data validation
     """
 
+@dataclass
+class nLevelSystem(TargetSystem):
+    """Dataclass that defines n level systems
+
+    Args:
+    -----
+    m (int): number of qubits
+
+    verbose (optional: bool): inform user about data validation
+
+    gammas (tuple(float)): decay interaction
+    
+    """
+    gammas: tuple[float]
 
 if __name__ == "__main__":
     import doctest

@@ -142,7 +142,7 @@ def J_fac(
         Ehatsss = measure_rhoss(rhohatss, Os)
 
         tracesss = Esss - Ehatsss
-        return np.sum(tracesss * tracesss) / norm_const
+        return np.real(np.sum(tracesss * tracesss) / norm_const)
 
     return J
 
@@ -232,7 +232,7 @@ def threaded_gradient_fac(J, rng, n_grad, P, h):
             theta_p[optimization_ind[i]] = theta_p[optimization_ind[i]] + h
             # theta_m[optimization_ind[i]] = theta_m[optimization_ind[i]] - h
 
-            grad_theta[optimization_ind[i]] = np.real(J(theta_p) - error) / (2 * h)
+            grad_theta[optimization_ind[i]] = np.real(J(theta_p) - error) / (h)
 
         opt_range = range(n_grad)
 

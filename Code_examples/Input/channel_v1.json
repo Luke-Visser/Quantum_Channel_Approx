@@ -1,0 +1,6 @@
+{
+    "m": 1,
+    "omegas": [0.5],
+    "gammas": [0.1],
+    "ryd_interaction": 1
+}

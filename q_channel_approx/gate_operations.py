@@ -2,6 +2,8 @@ import numpy as np
 import qutip as qt
 import scipy as sc
 
+from q_channel_approx.qubit_layouts import QubitLayout
+
 
 def kron_gates_l(single_gates):
     result = single_gates[0]
@@ -88,6 +90,120 @@ def H_fac(H, dims_AB):
 
     return U
 
+def driving_H_fac(m, interaction, qubits: QubitLayout):
+    """
+    Creates the driving Hamiltonian describing the drift of the system
+
+    Parameters
+    ----------
+    m : int
+        number of qubits.
+    type : string
+        selection of drive Hamiltonian.
+
+    Returns
+    -------
+    Hamiltonian : QObj, 2**m x 2**m
+          Hamiltonian describing the natural drift of the system
+
+    """
+    
+    Hamiltonian = qt.Qobj(dims=[[2] * m, [2] * m])
+    project1111 = qt.Qobj(np.array([[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,1]]), dims = [[2]*2,[2]*2])
+    project0110_1001 = qt.Qobj(np.array([[0,0,0,0],[0,0,1,0],[0,1,0,0],[0,0,0,0]]), dims = [[2,2],[2,2]])
+    
+    pairs_distance = qubits.find_qubit_distances()
+    
+    print(m)
+    for (i, j, d) in pairs_distance:
+        print(f"index i {i}, j {j}, with distance {d}")
+        
+    if interaction=='basic11':
+        for (i, j, d) in pairs_distance:
+            if d <=1:
+                Hamiltonian=Hamiltonian +qt.qip.operations.gates.expand_operator(project1111,m,[i,j])
+        return Hamiltonian
+    
+    elif interaction=='rydberg11':
+        for (i, j, d) in pairs_distance:
+            Hamiltonian += d**(-3) *qt.qip.operations.gates.expand_operator(project1111,m,[i,j])         
+        return Hamiltonian
+    
+    elif interaction == 'dipole0110':
+        for (i, j, d) in pairs_distance:
+            Hamiltonian += d**(-3/2) *qt.qip.operations.gates.expand_operator(project0110_1001,m,[i,j])
+        return Hamiltonian
+    
+    else:
+        raise ValueError(interaction +' is not a specified driving Hamiltonian interaction')
+
+    
+
+def control_H_fac(m,type_h):
+    """
+    Creates the control Hamiltonian operators
+
+    Parameters
+    ----------
+    m : int
+        number of qubits.
+    type_h : string
+        describes the type of control Hamiltonian.
+
+    Returns
+    -------
+    Hamiltonians : np.ndarray Qobj's, num_controls x 2
+        array of control Hamiltonians Ql to be influenced
+
+    """
+    if type_h=='rotations':
+        Hamiltonians=np.ndarray([m,2,],dtype=object)
+        project10op = qt.Qobj(np.array([[0,0],[1,0]]),dims = [[2],[2]])
+        project01op = qt.Qobj(np.array([[0,1],[0,0]]),dims = [[2],[2]])
+        for k in range(m):
+            Hamiltonians[k,0]=qt.qip.operations.gates.expand_operator(project10op, m, k)
+            Hamiltonians[k,1]=qt.qip.operations.gates.expand_operator(project01op, m, k)
+        return Hamiltonians
+    elif type_h=='realrotations':
+        Hamiltonians=np.ndarray([m,2,],dtype=object)
+        project10op = qt.Qobj(np.array([[0,0],[1,0]]),dims = [[2],[2]])
+        project01op = qt.Qobj(np.array([[0,1],[0,0]]),dims = [[2],[2]])
+        for k in range(m):
+            gate = qt.qip.operations.gates.expand_operator(project01op, m, k)
+            gate += qt.qip.operations.gates.expand_operator(project10op, m, k)
+            Hamiltonians[k,0]=gate
+            Hamiltonians[k,1]=gate
+        return Hamiltonians
+    
+    elif type_h=='rotations+11':
+        Hamiltonians=np.ndarray([2*m,2,],dtype=object)
+        project10op = qt.Qobj(np.array([[0,0],[1,0]]),dims = [[2],[2]])
+        project01op = qt.Qobj(np.array([[0,1],[0,0]]),dims = [[2],[2]])
+        project11op = qt.Qobj(np.array([[0,0],[0,1]]), dims = [[2],[2]])
+        for k in range(m):
+            Hamiltonians[k,0]=qt.qip.operations.gates.expand_operator(project10op, m, k)
+            Hamiltonians[k,1]=qt.qip.operations.gates.expand_operator(project01op, m, k)
+            Hamiltonians[m+k,0]=qt.qip.operations.gates.expand_operator(project11op, m, k)
+            Hamiltonians[m+k,1]=qt.qip.operations.gates.expand_operator(project11op, m, k)
+        return Hamiltonians
+    
+    elif type_h=='realrotations+11':
+        Hamiltonians=np.ndarray([2*m,2,],dtype=object)
+        project10op = qt.Qobj(np.array([[0,0],[1,0]]),dims = [[2],[2]])
+        project01op = qt.Qobj(np.array([[0,1],[0,0]]),dims = [[2],[2]])
+        project11op = qt.Qobj(np.array([[0,0],[0,1]]), dims = [[2],[2]])
+        for k in range(m):
+            gate = qt.qip.operations.gates.expand_operator(project01op, m, k)
+            gate += qt.qip.operations.gates.expand_operator(project10op, m, k)
+            Hamiltonians[k,0]=gate
+            Hamiltonians[k,1]=gate
+            Hamiltonians[m+k,0]=qt.qip.operations.gates.expand_operator(project11op, m, k)
+            Hamiltonians[m+k,1]=qt.qip.operations.gates.expand_operator(project11op, m, k)
+        return Hamiltonians
+    
+    else:
+        raise ValueError(type_h+' is not a specified way of creating control Hamiltonians.')
+
 
 def ryd_dipole_fac(connections, dims_AB):
 
@@ -107,7 +223,7 @@ def ryd_dipole_fac(connections, dims_AB):
 
         id1, id2, d = connection
         ham = qt.expand_operator(
-            oper=rydberg_2gate, dims=[2] * n_qubits, targets=[id1, id2]
+            oper=rydberg_2gate, N= n_qubits, dims=[2] * n_qubits, targets=[id1, id2]
         ).full()
         rydberg_gate += ham / d**3  # distance to the power -6
 
@@ -135,7 +251,7 @@ def ryd_vdw_fac(connections, dims_AB):
 
         id1, id2, d = connection
         ham = qt.expand_operator(
-            oper=rydberg_2gate, dims=[2] * n_qubits, targets=[id1, id2]
+            oper=rydberg_2gate, N= n_qubits, dims=[2] * n_qubits, targets=[id1, id2]
         ).full()
         rydberg_gate += ham / d**3  # distance to the power -6
 
@@ -161,7 +277,7 @@ def CNOT_fac(connections, dims_AB):
     for connection in connections:
         id1, id2, d = connection
         gate = qt.expand_operator(
-            oper=CNOT_gate, dims=[2] * n_qubits, targets=[id1, id2]
+            oper=CNOT_gate, N= n_qubits, dims=[2] * n_qubits, targets=[id1, id2]
         ).full()
         gates = gate @ gates
 
@@ -190,7 +306,7 @@ def xy_fac(connections, dims_AB):
 
             id1, id2, d = connection
             ham = qt.expand_operator(
-                oper=xy_gate, dims=[2] * n_qubits, targets=[id1, id2]
+                oper=xy_gate, N= n_qubits, dims=[2] * n_qubits, targets=[id1, id2]
             ).full()
             gates += ham / d**3  # distance to the power -6
 

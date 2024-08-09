@@ -118,6 +118,20 @@ class QubitLayout(ABC):
         ]
 
         return gate_connections
+    
+    def find_qubit_distances(self) -> Iterable[GateConnection]:
+        """calculate the distances between all pairs of qubits.
+        All qubit pair get a gate connection (q_id1, q_id2, d)."""
+
+        pairs = itertools.combinations(self.qubits, 2)
+
+        gate_connections = [
+            GateConnection(q1.id, q2.id, d)
+            for (q1, q2) in pairs
+            if (d := dist(q1, q2)) <= self.cutoff
+        ]
+
+        return gate_connections
 
     def show_layout(self, title: bool =True, c_map: dict = None) -> Axes:
         """Create (using matplotlib) a visual representation
@@ -233,3 +247,15 @@ class TriangularLayoutA(QubitLayout):
         )
 
         return enumerate_qubits((comp_qubits_l + comp_qubits_t)[:m])
+    
+def qubitLayout_fac(**kwargs):
+    m = kwargs["m"]
+    layout = kwargs['layout']
+    cutoff = kwargs['cutoff']
+    distance = kwargs['distance']
+    match layout:
+        case "triangular":
+            return TriangularLayoutAB(m=m, cutoff=cutoff, distance=distance)
+        case _:
+            print(f"layout {layout} unknown.")
+            raise ValueError(f"unknown layout: {layout}")

@@ -204,6 +204,34 @@ class TriangularLayoutAB(QubitLayout):
         )
 
         return enumerate_qubits(comp_qubits + anc_qubits)
+    
+class CircularLayoutAB(QubitLayout):
+    def __init__(self, m: int, cutoff: float = 1, distance: float = 1) -> None:
+        self.distance = distance
+        super().__init__(m, cutoff)
+        
+    def __repr__(self):
+        return f"Circular qubit layout ({self.m} comp. qubits, {self.n_ancilla} ancilla qubits)"
+
+    def place_qubits(self, m: int) -> tuple[Qubit]:
+        spacing = self.distance
+        if m == 1:
+            comp_qubits = tuple(((0,0, "computational"),))
+            anc_qubits = tuple(((1,0,'ancilla'),))
+        elif m == 2:
+            comp_qubits = tuple(((0,0, "computational"), (1,0, "computational")))
+            anc_qubits = tuple(((0.5,0.5*np.sqrt(3), "ancilla"), (0.5,-0.5*np.sqrt(3), "ancilla")))
+        elif m == 3:
+            comp_qubits = tuple(((0, 0, "computational"), 
+                                (1, 0, "computational"),
+                                (0.5, 0.5*np.sqrt(3), "computational")))
+            anc_qubits = tuple(((0.5, -0.5*np.sqrt(3), "ancilla"), 
+                                (1.5, 0.5*np.sqrt(3), "ancilla"),
+                                (-0.5, 0.5*np.sqrt(3), "ancilla")))
+        else:
+            raise ValueError(f"circular qubit layout unknown for {m} qubits")
+
+        return enumerate_qubits(comp_qubits + anc_qubits)
 
 
 class DoubleTriangularLayoutAB(QubitLayout):
@@ -256,6 +284,13 @@ def qubitLayout_fac(**kwargs):
     match layout:
         case "triangular":
             return TriangularLayoutAB(m=m, cutoff=cutoff, distance=distance)
+        
+        case "comp_only_triangular":
+            return TriangularLayoutA(m=m, cutoff = cutoff, distance = distance)
+        
+        case "circular":
+            return CircularLayoutAB(m=m, cutoff = cutoff, distance = distance)
+        
         case _:
             print(f"layout {layout} unknown.")
             raise ValueError(f"unknown layout: {layout}")

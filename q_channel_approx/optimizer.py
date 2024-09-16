@@ -5,12 +5,14 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
 from q_channel_approx.channel import channel_fac, evolver_fac
-from q_channel_approx.unitary_circuits import Circuit
+from q_channel_approx.unitary_circuits import GateCircuit
+from q_channel_approx.unitary_circuits_pulse import PulseCircuit
 from q_channel_approx.training_data import TrainingData, measure_rhoss
+from q_channel_approx.gradient_circuits import GradCircuit
 
 
 def optimize(
-    circuit: Circuit,
+    circuit: GateCircuit,
     training_data: TrainingData,
     max_count: int,
     theta_init: np.ndarray = None,
@@ -101,6 +103,109 @@ def optimize(
 
         if zero_grad:
             print(f"Zero gradient hit after {i} iterations")
+            return theta, errors[:i], thetas[:i]
+
+        if error < epsilon:
+            print(f"Error reduced below threshold of {epsilon} after {i} iterations")
+            return theta, errors[:i], thetas[:i]
+
+    print(
+        f"""-----\r
+        Grad calculation time: \r
+        {time_grad} \r
+        Armijo calculation time: \r
+        {time_armijo} \r
+        Total grad descend time: \r
+        {int((time2 - time_start) // 60)}:{(time2 - time_start) % 60:.2f}"""
+    )
+
+    return theta, errors, thetas
+
+def optimize_pulse(
+    circuit: GradCircuit,
+    training_data: TrainingData,
+    max_count: int,
+    theta_init: np.ndarray = None,
+    n_grad: int = None,
+    seed: int = None,
+    gamma: float = 0,#10 ** (-8),
+    sigmastart: int = 10,
+    epsilon: float = 10 ** (-10),
+    h: float = 1e-4,
+    thread_gradient=False,
+    verbose: bool = False,
+):
+
+    # change some variable names for more readable code
+    Zdt, t_max = circuit.Zdt, circuit.t_max
+    num_controls = circuit.operations[0].shape[0]
+    N = training_data.N
+    L = training_data.L
+    K = training_data.K
+
+    # Set armijo parameters
+    sigmabig, sigmasmall, sigmastart = 0, 0, sigmastart
+    sigmas = (sigmabig, sigmasmall, sigmastart)
+    zero_grad = False
+
+    # initialize some variables
+    theta = 0.1+np.zeros([num_controls, Zdt, 2]) if theta_init is None else theta_init
+
+    thetas = np.zeros((max_count, num_controls, Zdt, 2))
+    errors = np.zeros(max_count)
+    grad_size = np.zeros(max_count)
+    
+    # create desired gradient function
+    def J(theta):
+        return sum(Ji(theta) for Ji in circuit.loss)
+    
+    
+    def gradient(theta):
+        return sum(grad(theta) for grad in circuit.grad)
+    
+    # create the helper functions
+    N_step_evolver = evolver_fac(circuit=circuit, N=N)
+
+    armijo_update = armijo_update_fac(J=J, gamma=gamma)  
+
+    # Set timing parameters
+    time_grad = 0
+    time_armijo = 0
+    time_start = time.time()
+
+    for i in range(max_count):
+
+        time0 = time.time()
+
+        error = J(theta)
+        grad = gradient(theta)
+        
+        thetas[i] = theta.copy()
+        errors[i] = error
+        grad_size[i] = np.sum(grad * grad)
+
+        time1 = time.time()
+        time_grad += time1 - time0
+
+        theta, sigmas, zero_grad = armijo_update(theta, grad, error, sigmas)
+
+        time2 = time.time()
+        time_armijo += time2 - time1
+
+        if i % 10 == 0 and verbose:
+            error_J1 = circuit.loss[0](theta)
+            error_J2 = circuit.loss[1](theta)
+            print(
+                f"""Iteration: {i} \r
+            Gradient size: {grad_size[i]} \r
+            Current full error: {errors[i]} \r
+            Current J1 error: {error_J1} \r
+            Current J2 error: {error_J2} \r
+            Current sigma values: {sigmas}"""
+            )
+
+        if zero_grad:
+            print(f"No significant improvement with any sigma after {i} iterations")
             return theta, errors[:i], thetas[:i]
 
         if error < epsilon:

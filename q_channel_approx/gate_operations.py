@@ -90,7 +90,7 @@ def H_fac(H, dims_AB):
 
     return U
 
-def driving_H_fac(m, interaction, qubits: QubitLayout):
+def driving_H_fac(m, interaction, qubits: QubitLayout)->qt.Qobj:
     """
     Creates the driving Hamiltonian describing the drift of the system
 

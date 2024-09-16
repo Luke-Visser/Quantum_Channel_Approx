@@ -44,12 +44,12 @@ class TrainingData:
     Esss: np.ndarray
 
     def __post_init__(self):
-        """Determine the indexing variables `K, L, N`,
+        """Determine the indexing variables `N, K, L`,
         the dimension of the underlying Hilbert space.
         """
         K_Os = len(self.Os)
         self.dims_A, _ = self.Os[0].shape
-        self.L, K_Esss, self.N_ = self.Esss.shape
+        self.N_, K_Esss, self.L = self.Esss.shape
         self.N = self.N_ - 1
 
         assert (
@@ -144,10 +144,10 @@ def solve_lindblad_rho0s(
 
     ts = np.arange(N + 1) * delta_t
 
-    rhoss = np.zeros((L, N + 1, dims, dims), dtype=np.complex128)
+    rhoss = np.zeros((N + 1, L, dims, dims), dtype=np.complex128)
 
     for l in range(L):
-        rhoss[l, :, :, :] = np.array(
+        rhoss[:, l, :, :] = np.array(
             [
                 state.full()
                 for state in qt.mesolve(
@@ -170,9 +170,15 @@ def measure_rhos(rhos: np.ndarray, Os: list[np.ndarray]) -> np.ndarray:
         Os (list[np.ndarray]): think of it as a list of observables (length `K`).
 
     Returns:
-        np.ndarray: matrix of expectation values of dimension `K` by `N`.
+        np.ndarray: matrix of expectation values of dimension `N` by `K`.
     """
-    return np.einsum("kab,nab -> kn", Os, rhos, dtype=np.float64, optimize="greedy")
+    result = np.einsum("kab,nab -> nk", Os, rhos, dtype=np.float64, optimize="greedy")
+    
+    max_imag = np.max(np.imag(result))
+    if max_imag >= 10**-4:
+        print(f"Significant imaginary measurement component of value {max_imag} discarded")
+    
+    return np.real(result)
 
 
 def measure_rhoss(rhoss: np.ndarray, Os: list[np.ndarray]) -> np.ndarray:
@@ -186,9 +192,15 @@ def measure_rhoss(rhoss: np.ndarray, Os: list[np.ndarray]) -> np.ndarray:
         Os (list[np.ndarray]): think of it as a list of observables (length `K`).
 
     Returns:
-        np.ndarray: holor of expectation values (dimension (`L`, `K`, `N`)).
+        np.ndarray: holor of expectation values (dimension (`N`, `K`, `L`)).
     """
-    return np.einsum("kab, lnba -> lkn", Os, rhoss, dtype=np.float64, optimize="greedy")
+    result = np.einsum("kab, nlba -> nkl", Os, rhoss, dtype=np.float64, optimize="greedy")
+    
+    max_imag = np.max(np.imag(result))
+    if max_imag >= 10**-4:
+        print(f"Significant imaginary measurement component of value {max_imag} discarded")
+    
+    return np.real(result)
 
 
 def mk_training_data(rhoss: np.ndarray, Os: list[qt.Qobj]) -> TrainingData:
@@ -204,7 +216,7 @@ def mk_training_data(rhoss: np.ndarray, Os: list[qt.Qobj]) -> TrainingData:
         which can be used to optimize a gate sequence.
     """
 
-    rho0s = rhoss[:, 0, :, :]
+    rho0s = rhoss[0, :, :, :]
     Os = np.array([O.full() for O in Os])
     Esss = measure_rhoss(rhoss, Os)
 

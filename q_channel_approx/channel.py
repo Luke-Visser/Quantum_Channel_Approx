@@ -1,8 +1,8 @@
 import numpy as np
-from q_channel_approx.unitary_circuits import Circuit
+from q_channel_approx.unitary_circuits import GateCircuit
 
 
-def channel_fac(circuit: Circuit):
+def channel_fac(circuit: GateCircuit):
 
     unitary, qubits = circuit.U, circuit.qubit_layout
     dims_A = qubits.dims_A
@@ -17,7 +17,6 @@ def channel_fac(circuit: Circuit):
         U_dag = np.transpose(U.conj())
 
         def approx_phi(rho):
-
             rho_AB = np.kron(rho, ancilla)
             rho_tensor = (U @ rho_AB @ U_dag).reshape(dims_A, dims_B, dims_A, dims_B)
             return np.trace(rho_tensor, axis1=1, axis2=3)
@@ -27,7 +26,7 @@ def channel_fac(circuit: Circuit):
     return phi
 
 
-def evolver_fac(circuit: Circuit, N: int):
+def evolver_fac(circuit: GateCircuit, N: int):
 
     dims_A = circuit.qubit_layout.dims_A
 

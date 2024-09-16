@@ -6,7 +6,7 @@ defined in target_systems.py
 import qutip as qt
 import numpy as np
 
-from .target_systems import TargetSystem, DecaySystem, TFIMSystem, NothingSystem
+from .target_systems import TargetSystem, DecaySystem, TFIMSystem, NothingSystem, nLevelSystem
 from .pauli_spin_matrices import Idnp, Xnp, Znp, X
 
 
@@ -125,8 +125,36 @@ def decay_jump_oper(m: int, gammas) -> list[qt.Qobj]:
         
     
 def nlevel_jump_oper(m, gammas):
-    print('nlevel to be implemented')
-    pass
+    if m == 1:
+        An = np.array([[[0,gammas[0]],[0,0]]])
+    elif m == 2:
+        An = np.array([ \
+                       [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,gammas[0],0]], #|3>=|10> to |2> =|11>
+                       [[0,0,0,0],[0,0,0,gammas[1]],[0,0,0,0],[0,0,0,0]], #|2> =|11> to |1> = |01>
+                       [[0,gammas[2],0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]]) #|1> = |01> to |0> = |00>
+    elif m ==3:
+        An = np.array([
+            [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,gammas[0]],
+             [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]], #|7> - |6>
+            [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,gammas[1],0,0,0,0],[0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]], #|6> - |5>
+            [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,gammas[2],0,0,0,0,0],[0,0,0,0,0,0,0,0]], #|5>   - |4>
+            [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,gammas[3],0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]], #|4>   - |3>
+            [[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],[0,0,0,0,gammas[4],0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]], #|3>   - |2>
+            [[0,0,0,0,0,0,0,0],[0,0,0,0,0,gammas[5],0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]], #|2>   - |1>
+            [[0,gammas[6],0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]] #|1>   - |0>
+            ])
+    else:    
+        raise ValueError(f'nlevel for {m} qubits to be implemented')
+    
+    decay_ops = [qt.Qobj(single_decay, dims = [[2]*m,[2]*m]) for single_decay in An]
+    
+    return decay_ops
 
 
 def _I_hamiltonian(s: NothingSystem) -> qt.Qobj:
@@ -175,7 +203,7 @@ def create_hamiltonian(s: TargetSystem) -> qt.Qobj:
     if isinstance(s, TFIMSystem):
         return _tfim_hamiltonian(s)
 
-    if isinstance(s, NothingSystem):
+    if isinstance(s, NothingSystem) or isinstance(s, nLevelSystem):
         return _I_hamiltonian(s)
     
 def create_jump_opers(s: TargetSystem) -> list[qt.Qobj]:
@@ -188,10 +216,8 @@ def create_jump_opers(s: TargetSystem) -> list[qt.Qobj]:
     if isinstance(s, NothingSystem):
         return None
 
-# =============================================================================
-#     if isinstance(s, nLevelSystem):
-#         return _nlevel_jump_oper(s)
-# =============================================================================
+    if isinstance(s, nLevelSystem):
+        return _nlevel_jump_oper(s)
 
 
 

@@ -103,6 +103,7 @@ def solve_lindblad_rho0(
     """
 
     H = create_hamiltonian(s)
+    print(H)
     jump_opers = create_jump_opers(s)
 
     ts = np.arange(N + 1) * delta_t

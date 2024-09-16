@@ -61,7 +61,7 @@ def compare_ess(ref: tuple, approx: tuple, labels: list[str]) -> Axes:
         ax.plot(ts_approx, Es, label=rf"{labels[k]}", linestyle=":")
     plt.gca().set_prop_cycle(None)
     for k, Es in enumerate(Ess_ref.swapaxes(0,1)):
-        ax.plot(ts_ref, Es, label=rf"{labels[k]}", linestyle="-")
+        ax.plot(ts_ref, Es, linestyle="-") # label=rf"{labels[k]}", 
 
     # some formatting to make plot look nice
     plt.ylabel("population")
@@ -69,7 +69,7 @@ def compare_ess(ref: tuple, approx: tuple, labels: list[str]) -> Axes:
     plt.suptitle("Evolution", weight="bold")
     plt.title(f"{name_approx}: dashed line, {name_ref}: solid line")
     # plt.ylim(0, 1)
-    plt.legend(ncol = 2)
+    plt.legend(ncol = 2, loc = "upper left", bbox_to_anchor = (1,1))
     return ax
 
 

@@ -16,7 +16,7 @@ from q_channel_approx.unitary_circuits import gate_circuit_fac
 from q_channel_approx.unitary_circuits_pulse import unitary_pulsed_fac
 from q_channel_approx.gradient_circuits import gradCircuit_fac
 
-from q_channel_approx.physics_defns.target_systems import DecaySystem
+from q_channel_approx.physics_defns.target_systems import target_system_fac
 from q_channel_approx.training_data import ( 
     random_rho0s, 
     solve_lindblad_rho0s, 
@@ -24,11 +24,7 @@ from q_channel_approx.training_data import (
     mk_training_data, 
     measure_rhos
     )
-from q_channel_approx.training_observables import ( 
-    k_random_observables, 
-    order_n_observables, 
-    all_observables
-    )
+from q_channel_approx.training_observables import observables_fac
 from q_channel_approx.optimizer import optimize_pulse, channel_fac
 
 from q_channel_approx.physics_defns.initial_states import rho_rand_haar
@@ -75,27 +71,23 @@ channel_file="Input\\channel_v1.json"
 f = open(channel_file)
 channel_pars = json.load(f)
 
+# =============================================================================
+# ryd_interaction = channel_pars["ryd_interaction"]
+# omegas = channel_pars["omegas"]
+# gammas = channel_pars["gammas"]
+# 
+# l = channel_pars["n_rhos"]
+# observables = channel_pars["observables"]
+# 
+# system = DecaySystem(ryd_interaction=ryd_interaction, omegas=omegas, m=m, gammas=gammas)
+# =============================================================================
 
-ryd_interaction = channel_pars["ryd_interaction"]
-omegas = channel_pars["omegas"]
-gammas = channel_pars["gammas"]
+system = target_system_fac(**channel_pars)
 
-l = channel_pars["n_rhos"]
-observables = channel_pars["observables"]
-
-
-system = DecaySystem(ryd_interaction=ryd_interaction, omegas=omegas, m=m, gammas=gammas)
-
-rho0s = random_rho0s(m=m, L=l)
+rho0s = random_rho0s(m=m, L=channel_pars['n_rhos'])
 rhoss, ts = solve_lindblad_rho0s(rho0s=rho0s, delta_t=channel_pars['delta_t'], N=circuit_pars['n_depth'], s=system)
 
-match observables.split():
-    case ["order", val]:
-        Os = order_n_observables(m=m, n= int(val))
-    case ["random", val]:
-        Os = k_random_observables(m=m, k=int(val))
-    case ["all"]:
-        Os = all_observables(m=m)
+Os, Os_paulistrs = observables_fac(channel_pars["observables"], m)
         
 training_data = mk_training_data(rhoss, Os)
 
@@ -108,7 +100,7 @@ gradcircuit = gradCircuit_fac(circuit, training_data, "paulis", "all", circuit_p
 
 #%% Train
 
-theta_opt, errors, thetas = optimize_pulse(gradcircuit, training_data, max_count=100, verbose = True)
+theta_opt, errors, thetas = optimize_pulse(gradcircuit, training_data, max_count=500, verbose = True)
 
 
 #%% Predict
@@ -136,7 +128,7 @@ rho_ref_s, ts = solve_lindblad_rho0(rho0, delta_t=0.5, N=20, s=system)
 rho_ref_s = np.array([mat.full() for mat in rho_ref_s])
 e_ref_ss = measure_rhos(rho_ref_s, Os)
 
-labels = [f"{i} " for i in range(4**m)]
+labels = [f"{Os_paulistrs[i]}" for i in range(4**m)]
 compare_ess((ts, ess, "approx"), (ts, e_ref_ss, "ref"), labels=labels)
 
 

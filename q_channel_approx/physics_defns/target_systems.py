@@ -159,7 +159,46 @@ class nLevelSystem(TargetSystem):
     gammas (tuple(float)): decay interaction
     
     """
+    ryd_interaction: float
     gammas: tuple[float]
+    
+    def validate_gammas(self):
+        """Validate that enough omegas have been provided to model m qubit target system."""
+        if self.verbose:
+            print("    validating omegas and gammas...")
+
+        if (2**self.m)-1 != len(self.gammas):
+            raise ValueError(
+                f"wrong amount of gammas for {self.m} qubit target system: {self.omegas}"
+            )
+            
+    
+def target_system_fac(**kwargs):
+    channel_name = kwargs["name"]
+    
+    m = kwargs['m']
+    
+    match channel_name:
+        case "Decay":
+            try:
+                ryd_interaction = kwargs['ryd_interaction']
+                omegas = kwargs['omegas']
+                gammas = kwargs['gammas']
+            except KeyError:
+                raise KeyError(f"Missing variables in input file for system {channel_name}")
+            return DecaySystem(ryd_interaction=ryd_interaction, omegas=omegas, m=m, gammas=gammas)
+        
+        case "nlevel":
+            try:
+                ryd_interaction = kwargs['ryd_interaction']
+                gammas = kwargs['gammas']
+            except KeyError:
+                raise KeyError(f"Missing variables in input file for system {channel_name}")
+            return nLevelSystem(ryd_interaction=ryd_interaction, m=m, gammas=gammas)
+        
+        case _:
+            print(f"layout {channel_name} unknown.")
+            raise ValueError(f"unknown layout: {channel_name}")
 
 if __name__ == "__main__":
     import doctest

@@ -4,11 +4,11 @@
     "distance": 0.85,
     "cutoff": 1,
     "n_depth": 4,
-    "seed": 1,
+    "seed": 2,
     "method": "pulse",
     "control_H": "rotations",
     "driving_H": "rydberg11",
     "lambdapar": 10e-4,
-    "Zdt": 101,
-    "t_max": 10
+    "Zdt": 201,
+    "t_max": 20
 }

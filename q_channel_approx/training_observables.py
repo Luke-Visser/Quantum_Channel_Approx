@@ -25,7 +25,7 @@ def k_random_observables(m: int, k: int, seed: int) -> list[qt.Qobj]:
     """
 
     pauli_strs = k_random_pauli_strs(m=m, k=k, seed=seed)
-    return pauli_strs_2_ops(pauli_strs)
+    return pauli_strs_2_ops(pauli_strs), pauli_strs
 
 
 def order_n_observables(m: int, n: int) -> list[qt.Qobj]:
@@ -40,7 +40,7 @@ def order_n_observables(m: int, n: int) -> list[qt.Qobj]:
     """
 
     pauli_strs = order_n_pauli_strs(m=m, n=n)
-    return pauli_strs_2_ops(pauli_strs)
+    return pauli_strs_2_ops(pauli_strs), pauli_strs
 
 
 def all_observables(m: int) -> list[qt.Qobj]:
@@ -54,4 +54,15 @@ def all_observables(m: int) -> list[qt.Qobj]:
     """
 
     pauli_strs = all_pauli_strs(m=m)
-    return pauli_strs_2_ops(pauli_strs)
+    return pauli_strs_2_ops(pauli_strs), pauli_strs
+
+def observables_fac(name, m):
+    
+    match name.split():
+        case ["order", val]:
+            Os, names = order_n_observables(m=m, n= int(val))
+        case ["random", val]:
+            Os, names = k_random_observables(m=m, k=int(val))
+        case ["all"]:
+            Os, names = all_observables(m=m)
+    return Os, names

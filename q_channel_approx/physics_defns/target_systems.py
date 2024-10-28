@@ -110,6 +110,62 @@ class DecaySystem(TargetSystem):
             raise ValueError(
                 f"wrong amount of gammas for {self.m} qubit target system: {self.gammas}"
             )
+            
+@dataclass
+class DecaySystempm(TargetSystem):
+    """
+    Dataclass that defines a decay target system,
+    Rabi oscillations on m atoms with decay.
+
+    Args:
+    -----
+    m (int): number of qubits
+
+    verbose (optional: bool): inform user about data validation
+
+    ryd_interaction (float): Rydberg interaction strength
+    between the qubits
+
+    omegas (tuple[float]): the Rabi frequency of the qubits
+    Note: length must equal number of qubits m
+    
+    gammas (tuple[float]): the decay strength of the qubits
+    Note: length must equal number of qubits m
+
+    >>> DecaySystem(ryd_interaction=0.2,
+    ...               omegas=(0.2), # not a tuple! expects (0.2,)
+    ...               m=1,)
+    Traceback (most recent call last):
+    ...
+    TypeError: object of type 'float' has no len()
+
+    >>> DecaySystem(ryd_interaction=0.2,
+    ...               omegas=(0.2,), # not enough omegas for m qubit system
+    ...               m=2)
+    Traceback (most recent call last):
+    ...
+    ValueError: wrong amount of omegas for 2 qubit target system: (0.2,)
+    """
+
+    ryd_interaction: float
+
+    omegas: tuple[float]
+    gammas: tuple[float]
+
+    def validate_omegas(self):
+        """Validate that enough omegas have been provided to model m qubit target system."""
+        if self.verbose:
+            print("    validating omegas and gammas...")
+
+        if self.m != len(self.omegas):
+            raise ValueError(
+                f"wrong amount of omegas for {self.m} qubit target system: {self.omegas}"
+            )
+            
+        if self.m != len(self.gammas):
+            raise ValueError(
+                f"wrong amount of gammas for {self.m} qubit target system: {self.gammas}"
+            )
 
 
 @dataclass
@@ -195,6 +251,15 @@ def target_system_fac(**kwargs):
             except KeyError:
                 raise KeyError(f"Missing variables in input file for system {channel_name}")
             return nLevelSystem(ryd_interaction=ryd_interaction, m=m, gammas=gammas)
+        
+        case "Decaypm":
+            try:
+                ryd_interaction = kwargs['ryd_interaction']
+                omegas = kwargs['omegas']
+                gammas = kwargs['gammas']
+            except KeyError:
+                raise KeyError(f"Missing variables in input file for system {channel_name}")
+            return DecaySystempm(ryd_interaction=ryd_interaction, omegas=omegas, m=m, gammas=gammas)
         
         case _:
             print(f"layout {channel_name} unknown.")

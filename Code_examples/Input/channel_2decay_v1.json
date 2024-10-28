@@ -4,7 +4,7 @@
     "omegas": [0.0, 0.0],
     "gammas": [0.5, 0.3],
     "ryd_interaction": 1,
-    "n_rhos": 20,
+    "n_rhos": 10,
     "observables": "order 2",
     "delta_t": 0.5
 }

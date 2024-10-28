@@ -1,0 +1,15 @@
+{
+    "m": 2,
+    "layout": "double_line",
+    "loss_type": "paulis",
+    "distance": 0.85,
+    "cutoff": 4,
+    "n_depth": 4,
+    "seed": 4,
+    "method": "pulse",
+    "control_H": "realrotations+11",
+    "driving_H": "rydberg11",
+    "lambdapar": 10e-5,
+    "Zdt": 301,
+    "t_max": 15
+}

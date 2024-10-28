@@ -1,0 +1,10 @@
+{
+    "name": "Decay",
+    "m": 1,
+    "omegas": [0.0],
+    "gammas": [0.5],
+    "ryd_interaction": 1,
+    "n_rhos": 20,
+    "observables": "all",
+    "delta_t": 0.5
+}

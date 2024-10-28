@@ -6,7 +6,7 @@ defined in target_systems.py
 import qutip as qt
 import numpy as np
 
-from .target_systems import TargetSystem, DecaySystem, TFIMSystem, NothingSystem, nLevelSystem
+from .target_systems import TargetSystem, DecaySystem, TFIMSystem, NothingSystem, nLevelSystem, DecaySystempm
 from .pauli_spin_matrices import Idnp, Xnp, Znp, X
 
 
@@ -122,6 +122,14 @@ def decay_jump_oper(m: int, gammas) -> list[qt.Qobj]:
         decay_ops[i] = gammas[i] * np.kron(np.kron(np.eye(2**i), single_decay),np.eye(2**(m-i-1)))
     decay_ops = [qt.Qobj(decay_ops[i], dims = [[2]*m,[2]*m]) for i in range(m)]
     return decay_ops
+
+def decay_jump_oper_pm(m: int, gammas) -> list[qt.Qobj]:
+    single_decay = np.array([[1,-1],[1,-1]])
+    decay_ops = [np.zeros([2**m,2**m]) for _ in range(m)]
+    for i in range(m):
+        decay_ops[i] = gammas[i] * np.kron(np.kron(np.eye(2**i), single_decay),np.eye(2**(m-i-1)))
+    decay_ops = [qt.Qobj(decay_ops[i], dims = [[2]*m,[2]*m]) for i in range(m)]
+    return decay_ops
         
     
 def nlevel_jump_oper(m, gammas):
@@ -187,6 +195,11 @@ def _decay_jump_oper(s: TargetSystem):
     gammas = s.gammas
     return decay_jump_oper(m=m, gammas = gammas)
 
+def _decay_jump_oper_pm(s: TargetSystem):
+    m = s.m
+    gammas = s.gammas
+    return decay_jump_oper_pm(m=m, gammas = gammas)
+
 def _nlevel_jump_oper(s: TargetSystem) -> list[qt.Qobj]:
     m = s.m
     gammas = s.gammas
@@ -197,7 +210,7 @@ def create_hamiltonian(s: TargetSystem) -> qt.Qobj:
     """Convenience function that creates the appropriate
     Hamiltonian from settings."""
 
-    if isinstance(s, DecaySystem):
+    if isinstance(s, DecaySystem) or isinstance(s, DecaySystempm):
         return _decay_hamiltonian(s)
 
     if isinstance(s, TFIMSystem):
@@ -218,6 +231,9 @@ def create_jump_opers(s: TargetSystem) -> list[qt.Qobj]:
 
     if isinstance(s, nLevelSystem):
         return _nlevel_jump_oper(s)
+    
+    if isinstance(s, DecaySystempm):
+        return _decay_jump_oper_pm(s)
 
 
 

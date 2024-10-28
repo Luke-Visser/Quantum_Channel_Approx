@@ -152,12 +152,15 @@ def optimize_pulse(
     theta = 0.1+np.zeros([num_controls, Zdt, 2]) if theta_init is None else theta_init
 
     thetas = np.zeros((max_count, num_controls, Zdt, 2))
-    errors = np.zeros(max_count)
+    errors = np.zeros((max_count,len(circuit.loss)))
     grad_size = np.zeros(max_count)
     
     # create desired gradient function
     def J(theta):
         return sum(Ji(theta) for Ji in circuit.loss)
+
+    def J_sep(theta):
+        return [Ji(theta) for Ji in circuit.loss]
     
     
     def gradient(theta):
@@ -176,12 +179,12 @@ def optimize_pulse(
     for i in range(max_count):
 
         time0 = time.time()
-
-        error = J(theta)
+        
+        errors[i] = J_sep(theta)
+        error = sum(errors[i])
         grad = gradient(theta)
         
         thetas[i] = theta.copy()
-        errors[i] = error
         grad_size[i] = np.sum(grad * grad)
 
         time1 = time.time()
@@ -193,14 +196,11 @@ def optimize_pulse(
         time_armijo += time2 - time1
 
         if i % 10 == 0 and verbose:
-            error_J1 = circuit.loss[0](theta)
-            error_J2 = circuit.loss[1](theta)
             print(
                 f"""Iteration: {i} \r
             Gradient size: {grad_size[i]} \r
-            Current full error: {errors[i]} \r
-            Current J1 error: {error_J1} \r
-            Current J2 error: {error_J2} \r
+            Current error: {error} \r
+            error components: {errors[i]} \r
             Current sigma values: {sigmas}"""
             )
 

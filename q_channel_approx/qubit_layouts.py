@@ -214,20 +214,50 @@ class CircularLayoutAB(QubitLayout):
         return f"Circular qubit layout ({self.m} comp. qubits, {self.n_ancilla} ancilla qubits)"
 
     def place_qubits(self, m: int) -> tuple[Qubit]:
-        spacing = self.distance
+        d = self.distance
         if m == 1:
             comp_qubits = tuple(((0,0, "computational"),))
-            anc_qubits = tuple(((1,0,'ancilla'),))
+            anc_qubits = tuple(((d*1,0,'ancilla'),))
         elif m == 2:
-            comp_qubits = tuple(((0,0, "computational"), (1,0, "computational")))
-            anc_qubits = tuple(((0.5,0.5*np.sqrt(3), "ancilla"), (0.5,-0.5*np.sqrt(3), "ancilla")))
+            comp_qubits = tuple(((0,0, "computational"), (d*1,0, "computational")))
+            anc_qubits = tuple(((d*0.5, d*0.5*np.sqrt(3), "ancilla"), (d*0.5,-d*0.5*np.sqrt(3), "ancilla")))
         elif m == 3:
             comp_qubits = tuple(((0, 0, "computational"), 
-                                (1, 0, "computational"),
-                                (0.5, 0.5*np.sqrt(3), "computational")))
-            anc_qubits = tuple(((0.5, -0.5*np.sqrt(3), "ancilla"), 
-                                (1.5, 0.5*np.sqrt(3), "ancilla"),
-                                (-0.5, 0.5*np.sqrt(3), "ancilla")))
+                                (d*1, 0, "computational"),
+                                (d*0.5, d*0.5*np.sqrt(3), "computational")))
+            anc_qubits = tuple(((d*0.5, -d*0.5*np.sqrt(3), "ancilla"), 
+                                (d*1.5, d*0.5*np.sqrt(3), "ancilla"),
+                                (-d*0.5, d*0.5*np.sqrt(3), "ancilla")))
+        else:
+            raise ValueError(f"circular qubit layout unknown for {m} qubits")
+
+        return enumerate_qubits(comp_qubits + anc_qubits)
+    
+class OldCircularLayoutAB(QubitLayout):
+    def __init__(self, m: int, cutoff: float = 1, distance: float = 1) -> None:
+        self.distance = distance
+        super().__init__(m, cutoff)
+        
+    def __repr__(self):
+        return f"Circular qubit layout ({self.m} comp. qubits, {self.n_ancilla} ancilla qubits)"
+
+    def place_qubits(self, m: int) -> tuple[Qubit]:
+        d = self.distance
+        if m == 1:
+            comp_qubits = tuple(((0,0, "computational"),))
+            anc_qubits = tuple(((d*1,0,'ancilla'),(-d*1,0,'ancilla')))
+        elif m == 2:
+            comp_qubits = tuple(((0,0, "computational"), (d*1,0, "computational")))
+            anc_qubits = tuple(((d*0.5, d*0.5*np.sqrt(3), "ancilla"), 
+                                (d*0.5,-d*0.5*np.sqrt(3), "ancilla"),
+                                (-d*0.5,-d*0.5*np.sqrt(3), "ancilla")))
+        elif m == 3:
+            comp_qubits = tuple(((0, 0, "computational"), 
+                                (d*1, 0, "computational"),
+                                (d*0.5, d*0.5*np.sqrt(3), "computational")))
+            anc_qubits = tuple(((d*0.5, -d*0.5*np.sqrt(3), "ancilla"), 
+                                (d*1.5, d*0.5*np.sqrt(3), "ancilla"),
+                                (-d*0.5, d*0.5*np.sqrt(3), "ancilla")))
         else:
             raise ValueError(f"circular qubit layout unknown for {m} qubits")
 
@@ -276,6 +306,21 @@ class TriangularLayoutA(QubitLayout):
 
         return enumerate_qubits((comp_qubits_l + comp_qubits_t)[:m])
     
+class DoubleLine(QubitLayout):
+    def __init__(self, m: int, cutoff: float = 1, distance: float = 1) -> None:
+        self.distance = distance
+        super().__init__(m, cutoff)
+
+    def __repr__(self):
+        return f"Double line of qubits layout ({self.m} comp. qubits, {self.n_ancilla} ancilla qubits)"
+
+    def place_qubits(self, m: int) -> tuple[Qubit]:
+        spacing = self.distance
+        comp_qubits = tuple((spacing * i, 0, "computational") for i in range(m))
+        anc_qubits_t = tuple((spacing * i, spacing, "ancilla") for i in range(m))
+
+        return enumerate_qubits(comp_qubits + anc_qubits_t)
+    
 def qubitLayout_fac(**kwargs):
     m = kwargs["m"]
     layout = kwargs['layout']
@@ -290,6 +335,12 @@ def qubitLayout_fac(**kwargs):
         
         case "circular":
             return CircularLayoutAB(m=m, cutoff = cutoff, distance = distance)
+        
+        case "circular_old":
+            return OldCircularLayoutAB(m=m, cutoff = cutoff, distance = distance)
+        
+        case "double_line":
+            return DoubleLine(m=m, cutoff = cutoff, distance = distance)
         
         case _:
             print(f"layout {layout} unknown.")

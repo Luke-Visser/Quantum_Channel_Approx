@@ -26,8 +26,17 @@ def pauli_str_2_op(pauli_str: Iterable[str]) -> qt.Qobj:
 
     pauli_str = [SPIN_MATRIX_DICT[pauli_mat] for pauli_mat in pauli_str]
 
-    return qt.tensor(*pauli_str)
+    return qt.tensor(*pauli_str).full()
 
+def pauli_str_2_nonzero(pauli_str: Iterable[str]):
+    
+    id_qubit_list = np.zeros(np.array(pauli_str).shape)
+    for (i, full_str) in enumerate(pauli_str):
+        for (j, qubit_str) in enumerate(full_str):
+            if qubit_str != "I":
+                id_qubit_list[i,j] = 1
+    return id_qubit_list
+        
 
 def pauli_strs_2_ops(pauli_strs: list[Iterable[str]]) -> list[qt.Qobj]:
     """Apply pauli_str_2_op on all pauli strings in pauli_strs."""

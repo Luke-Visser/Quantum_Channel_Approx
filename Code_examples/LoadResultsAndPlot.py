@@ -3,12 +3,6 @@
 Created on Mon Sep 18 11:53:36 2023
 
 @author: 20168723
-
-general todo:
-    - comments
-    - fix saving of optimal theta (save to correct control, give proper name?)
-    - 
-    
 """
 
 
@@ -26,8 +20,7 @@ from q_channel_approx.gradient_circuits import gradCircuit_fac
 
 from q_channel_approx.physics_defns.target_systems import target_system_fac
 from q_channel_approx.training_data import ( 
-    random_rho0s,
-    deterministic_rho0s,
+    random_rho0s, 
     solve_lindblad_rho0s, 
     solve_lindblad_rho0, 
     mk_training_data, 
@@ -44,7 +37,9 @@ from q_channel_approx.plotting.routines import (
     plot_pulses,
     save_figs,
     save_data,
-    load_data)
+    load_data,
+    fancy_fig_1,
+    fancy_fig_2)
 from q_channel_approx.plotting.observables import create_observables_comp_basis
 
 
@@ -52,25 +47,24 @@ timestamp = "{:%Y-%m-%d_time_%H-%M-%S}".format(datetime.now()) # Filenames for s
 file_dir = os.getcwd()
 
 #%% Files and parameters
-circuit_file = "Input\\Circuit_pulse_2qubit_v2.json"   
-channel_file="Input\\channel_2decay_v1.json"
-training_iters = 2000
 
-save_results = True
+save_results = False
 
-if save_results:
-    name_results = "2decay" + timestamp # Name used for saving results
-    results_path = os.path.join(file_dir, "Results", name_results)
-    os.mkdir(results_path)
+#%% Load data
 
+path1 = 'C:\\Users\\20168723\\OneDrive - TU Eindhoven\\TUe PhD\\Code\\Quantum_Channel_Approx_V2\\Code_examples\\Results'
+#folder = "4level_long_2024-09-30_time_11-23-20"
+folder = "1QubitDecayPM_long_2024-09-30_time_11-50-29"
+#folder = "4level_test_2024-10-08_time_10-41-36"
+path_loading = os.path.join(path1, folder, 'simulation_results.xlsx')
+all_pars, theta_opt, errors = load_data(path_loading)
+channel_pars = all_pars
+circuit_pars = all_pars
 
+results_path = os.path.join(path1, folder)
 
 
 #%% Setup circuit
-
-# read circuit settings
-f = open(circuit_file)
-circuit_pars = json.load(f)
 
 
 qubits = qubitLayout_fac(**circuit_pars)
@@ -90,16 +84,11 @@ np.random.seed(seed)
 
 #%% Setup target quantum channel parameters and observables
 
-# read channel settings
-f = open(channel_file)
-channel_pars = json.load(f)
-
 # Quantum channel
 system = target_system_fac(**channel_pars)
 
 # Generate and evolve density matrices
-#rho0s = random_rho0s(m=m, L=channel_pars['n_rhos'])
-rho0s = deterministic_rho0s(m=m, L=channel_pars['n_rhos'])
+rho0s = random_rho0s(m=m, L=channel_pars['n_rhos'])
 rhoss, ts = solve_lindblad_rho0s(rho0s=rho0s, delta_t=channel_pars['delta_t'], N=circuit_pars['n_depth'], s=system)
 
 # Gather training data
@@ -108,25 +97,15 @@ training_data = mk_training_data(rhoss, Os)
 
 # Determine circuit with loss and gradient function
 gradcircuit = gradCircuit_fac(circuit, training_data, circuit_pars["loss_type"], "all", circuit_pars['lambdapar'])
-
-
-#%% Train
-
-theta_opt, errors, thetas = optimize_pulse(gradcircuit, training_data, max_count=training_iters, verbose = True)
-
-
-if save_results:
-    save_data(results_path, theta_opt, errors, circuit_pars, channel_pars)
+    
 
 
 #%% Predict
 
-
-
 # nice seeds for 4level: 5, 9
-time_reps = 50
-rho0 = rho_rand_haar(m, 5)
-rho0 = rho0s[6]
+time_reps = 20
+prediction_seed = 5
+rho0 = rho_rand_haar(m, prediction_seed)
 
 # Evolution function rho
 def evolve_n_times(n: int, rho):
@@ -148,34 +127,36 @@ rho_ref_s = np.array([mat.full() for mat in rho_ref_s])
 e_ref_ss = measure_rhos(rho_ref_s, Os())
 
 labels = [f"{Os.Os_names[i]}" for i in range(4**m)]
-comparison_fig = compare_ess((ts, ess, "approx"), (ts, e_ref_ss, "ref"), labels=labels)
+comparison_fig = compare_ess(approx = (ts, ess, "approx"), ref= (ts, e_ref_ss, "ref"), labels=labels)
 
 # Data & fig for basis measurements
 Os_comp_basis = create_observables_comp_basis(m)
 labels_basis = [format(i, f"0{m}b") for i in range(len(Os_comp_basis))]
-labels_basis = [r'$0=|00\rangle$', r'$1=|01\rangle$', r'$3=|10\rangle$', r'$2=|11\rangle$']
+#labels_basis = [r'$0=|00\rangle$', r'$1=|01\rangle$', r'$3=|10\rangle$', r'$2=|11\rangle$']
+labels_basis = [r'$0=|0\rangle$', r'$1=|1\rangle$']
 ess_basis = measure_rhos(rhos, Os_comp_basis)
 e_ref_ss_basis = measure_rhos(rho_ref_s, Os_comp_basis)
 
 basis_fig = compare_ess(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels=labels_basis)
 error_fig = error_evolution(errors)
 
+fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+
 if save_results:
-    names = ["Pauli_evolution", "01_evolution", "Training error"]
-    save_figs([comparison_fig, basis_fig, error_fig], results_path, names)
+    names = ["Pauli_evolution", "01_evolution", "Training error", "Combined_figure"]
+    save_figs([comparison_fig, basis_fig, error_fig, fancy_fig], results_path, names)
 
 
 #%% Sanity check on training data
 
-rho_index = 2
-time_reps = 10
+rho_index = 0
 
-rhos = evolve_n_times(time_reps, training_data.rho0s[rho_index])
+rhos = evolve_n_times(20, training_data.rho0s[rho_index])
 ess = measure_rhos(rhos, Os_comp_basis)
 
 
 rho0 = qt.Qobj(training_data.rho0s[rho_index], dims = [[2]*m,[2]*m])
-rho_ref_s, ts = solve_lindblad_rho0(rho0, delta_t = 0.5, N=time_reps, s=system)
+rho_ref_s, ts = solve_lindblad_rho0(rho0, delta_t = 0.5, N=20, s=system)
 rho_ref_s = np.array([mat.full() for mat in rho_ref_s])
 e_ref_ss = measure_rhos(rho_ref_s, Os_comp_basis)
 

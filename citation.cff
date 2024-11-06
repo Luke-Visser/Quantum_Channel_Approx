@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: Quantum Channel Approximation
+message: 'If you use this software, please cite it as below.'
+type: software
+authors:
+  - given-names: Luke
+    family-names: Visser
+    affiliation: Eindhoven University of Technology
+    orcid: 'https://orcid.org/0009-0005-8496-0424'
+identifiers:
+  - type: doi
+    value: 10.48550/arXiv.2309.10593
+repository-code: 'https://github.com/Luke-Visser/Quantum_Channel_Approx'
+license: MIT

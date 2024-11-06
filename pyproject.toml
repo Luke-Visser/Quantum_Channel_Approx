@@ -1,7 +1,7 @@
 [project]
 name = "q_channel_approx"
-version = "0.2.0"
-description = "QCA code based on work by Luke and David"
+version = "0.3.0"
+description = "QCA code based on work by Luke, Robert, and David"
 
 [build-system]
 build-backend = "flit_core.buildapi"

@@ -91,6 +91,14 @@ def tfim_hamiltonian(m: int, j_en: float, h_en: float) -> qt.Qobj:
     Returns:
         qt.Qobj: The corresponding Hamiltonian.
     """
+    
+    if m == 1:
+        print("TFIM for 1 qubit is identical to 1 qubit decay")
+        return qt.Qobj(
+            j_en * np.kron(Znp, Znp)
+            - h_en * (np.kron(Xnp, Idnp) + np.kron(Idnp, Xnp)),
+            dims=[[2, 2], [2, 2]],
+        )
 
     if m == 2:
         return qt.Qobj(
@@ -103,8 +111,8 @@ def tfim_hamiltonian(m: int, j_en: float, h_en: float) -> qt.Qobj:
         return qt.Qobj(
             j_en
             * (
-                np.kron(np.kron(Znp, Idnp), Idnp) @ np.kron(np.kron(Idnp, Znp), Idnp)
-                + np.kron(np.kron(Idnp, Idnp), Znp) @ np.kron(np.kron(Idnp, Znp), Idnp)
+                np.kron(np.kron(Znp, Znp), Idnp)
+                + np.kron(np.kron(Idnp, Znp), Znp)
             )
             - h_en
             * (

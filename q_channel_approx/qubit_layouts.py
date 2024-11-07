@@ -119,6 +119,20 @@ class QubitLayout(ABC):
 
         return gate_connections
     
+    def find_qubit_distances_comp(self) -> Iterable[GateConnection]:
+        """calculate the distances between all pairs of qubits.
+        All qubit pair get a gate connection (q_id1, q_id2, d)."""
+
+        pairs = itertools.combinations(self.comp_qubits, 2)
+
+        gate_connections = [
+            GateConnection(q1.id, q2.id, d)
+            for (q1, q2) in pairs
+            if (d := dist(q1, q2)) <= self.cutoff
+        ]
+
+        return gate_connections
+    
     def find_qubit_distances(self) -> Iterable[GateConnection]:
         """calculate the distances between all pairs of qubits.
         All qubit pair get a gate connection (q_id1, q_id2, d)."""
@@ -219,8 +233,10 @@ class CircularLayoutAB(QubitLayout):
             comp_qubits = tuple(((0,0, "computational"),))
             anc_qubits = tuple(((d*1,0,'ancilla'),))
         elif m == 2:
-            comp_qubits = tuple(((0,0, "computational"), (d*1,0, "computational")))
-            anc_qubits = tuple(((d*0.5, d*0.5*np.sqrt(3), "ancilla"), (d*0.5,-d*0.5*np.sqrt(3), "ancilla")))
+            comp_qubits = tuple(((0,0, "computational"), 
+                                 (d*1,0, "computational")))
+            anc_qubits = tuple(((d*0.5, d*0.5*np.sqrt(3), "ancilla"), 
+                                (d*0.5,-d*0.5*np.sqrt(3), "ancilla")))
         elif m == 3:
             comp_qubits = tuple(((0, 0, "computational"), 
                                 (d*1, 0, "computational"),
@@ -245,9 +261,11 @@ class OldCircularLayoutAB(QubitLayout):
         d = self.distance
         if m == 1:
             comp_qubits = tuple(((0,0, "computational"),))
-            anc_qubits = tuple(((d*1,0,'ancilla'),(-d*1,0,'ancilla')))
+            anc_qubits = tuple((( d*0.5, d*0.5*np.sqrt(3), "ancilla"), 
+                                (-d*0.5, d*0.5*np.sqrt(3), "ancilla")))
         elif m == 2:
-            comp_qubits = tuple(((0,0, "computational"), (d*1,0, "computational")))
+            comp_qubits = tuple(((0,0, "computational"), 
+                                 (d*1,0, "computational")))
             anc_qubits = tuple(((d*0.5, d*0.5*np.sqrt(3), "ancilla"), 
                                 (d*0.5,-d*0.5*np.sqrt(3), "ancilla"),
                                 (-d*0.5,-d*0.5*np.sqrt(3), "ancilla")))
@@ -306,6 +324,20 @@ class TriangularLayoutA(QubitLayout):
 
         return enumerate_qubits((comp_qubits_l + comp_qubits_t)[:m])
     
+class LineLayout_comp(QubitLayout):
+    def __init__(self, m: int, cutoff: float = 1, distance: float = 1) -> None:
+        self.distance = distance
+        super().__init__(m, cutoff)
+
+    def __repr__(self):
+        return f"Triangular qubit layout ({self.m} comp. qubits, {self.n_ancilla} ancilla qubits)"
+
+    def place_qubits(self, m: int) -> tuple[Qubit]:
+        spacing = self.distance
+        comp_qubits = tuple((spacing * i, 0, "computational") for i in range(m))
+
+        return enumerate_qubits(comp_qubits)
+    
 class DoubleLine(QubitLayout):
     def __init__(self, m: int, cutoff: float = 1, distance: float = 1) -> None:
         self.distance = distance
@@ -333,8 +365,14 @@ def qubitLayout_fac(**kwargs):
         case "comp_only_triangular":
             return TriangularLayoutA(m=m, cutoff = cutoff, distance = distance)
         
+        case "comp_only":
+            return LineLayout_comp(m=m, cutoff= cutoff, distance = distance)
+        
         case "circular":
             return CircularLayoutAB(m=m, cutoff = cutoff, distance = distance)
+        
+        case "old_circular":
+            return OldCircularLayoutAB(m=m, cutoff = cutoff, distance = distance)
         
         case "circular_old":
             return OldCircularLayoutAB(m=m, cutoff = cutoff, distance = distance)

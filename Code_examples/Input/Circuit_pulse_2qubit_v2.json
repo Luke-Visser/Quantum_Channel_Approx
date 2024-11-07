@@ -1,6 +1,6 @@
 {
     "m": 2,
-    "layout": "double_line",
+    "layout": "circular",
     "loss_type": "paulis",
     "distance": 0.85,
     "cutoff": 4,
@@ -10,6 +10,6 @@
     "control_H": "realrotations+11",
     "driving_H": "rydberg11",
     "lambdapar": 10e-5,
-    "Zdt": 301,
-    "t_max": 15
+    "Zdt": 201,
+    "t_max": 20
 }

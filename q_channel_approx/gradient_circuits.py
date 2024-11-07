@@ -28,7 +28,8 @@ class GradCircuit(NamedTuple):
     
     
     def __repr__(self) -> str:
-        self.circuit.__repr__()
+        return f"Circuit; qubits layout: \n {self.qubit_layout} \n segments: {self.Zdt} \n Pulse time: {self.t_max} \n Operations {self.operations}"
+
         
         
 def evolve_rho(U: np.ndarray, training_data : TrainingData):

@@ -38,13 +38,14 @@ from q_channel_approx.optimizer import optimize_pulse, channel_fac
 
 from q_channel_approx.physics_defns.initial_states import rho_rand_haar
 from q_channel_approx.plotting.routines import ( 
-    plot_ess, 
     compare_ess, 
     error_evolution,
     plot_pulses,
     save_figs,
     save_data,
-    load_data)
+    load_data,
+    fancy_fig_1,
+    fancy_fig_2)
 from q_channel_approx.plotting.observables import create_observables_comp_basis
 
 
@@ -52,14 +53,30 @@ timestamp = "{:%Y-%m-%d_time_%H-%M-%S}".format(datetime.now()) # Filenames for s
 file_dir = os.getcwd()
 
 #%% Files and parameters
-circuit_file = "Input\\Circuit_pulse_2qubit_v2.json"   
-channel_file="Input\\channel_2decay_v1.json"
-training_iters = 2000
+#circuit_file = "Input\\Circuit_pulse_2qubit_v2.json" 
+#channel_file = "Input\\channel_2decay_v1.json"
+
+channel_file = "Input\\channel_1decay_v2.json"  
+circuit_file = "Input\\Circuit_pulse_1qubit_v1.json"
+
+#channel_file = "Input\\channel_2ising_v1.json"
+#circuit_file = "Input\\Circuit_pulse_2qubit_v2.json"
+
+training_iters = 1000
+
+# read circuit settings
+f = open(circuit_file)
+circuit_pars = json.load(f)
+
+# read channel settings
+f = open(channel_file)
+channel_pars = json.load(f)
+
 
 save_results = True
-
 if save_results:
-    name_results = "2decay" + timestamp # Name used for saving results
+    name_results = "{}Q_{}".format(channel_pars['m'], channel_pars['name']) + timestamp
+    #name_results = "1decay_ham" + timestamp
     results_path = os.path.join(file_dir, "Results", name_results)
     os.mkdir(results_path)
 
@@ -67,11 +84,6 @@ if save_results:
 
 
 #%% Setup circuit
-
-# read circuit settings
-f = open(circuit_file)
-circuit_pars = json.load(f)
-
 
 qubits = qubitLayout_fac(**circuit_pars)
 m = qubits.m
@@ -90,9 +102,6 @@ np.random.seed(seed)
 
 #%% Setup target quantum channel parameters and observables
 
-# read channel settings
-f = open(channel_file)
-channel_pars = json.load(f)
 
 # Quantum channel
 system = target_system_fac(**channel_pars)
@@ -124,9 +133,9 @@ if save_results:
 
 
 # nice seeds for 4level: 5, 9
-time_reps = 50
+time_reps = 20
 rho0 = rho_rand_haar(m, 5)
-rho0 = rho0s[6]
+#rho0 = rho0s[6]
 
 # Evolution function rho
 def evolve_n_times(n: int, rho):
@@ -144,25 +153,34 @@ rhos = evolve_n_times(time_reps, rho0)
 ess = measure_rhos(rhos, Os())
 
 rho_ref_s, ts = solve_lindblad_rho0(rho0, delta_t=channel_pars['delta_t'], N=time_reps, s=system)
+incr_res = 10
+rho_ref_s, ts_ref = solve_lindblad_rho0(rho0, delta_t=channel_pars['delta_t']/incr_res, N=time_reps*incr_res, s=system)
 rho_ref_s = np.array([mat.full() for mat in rho_ref_s])
 e_ref_ss = measure_rhos(rho_ref_s, Os())
 
 labels = [f"{Os.Os_names[i]}" for i in range(4**m)]
-comparison_fig = compare_ess((ts, ess, "approx"), (ts, e_ref_ss, "ref"), labels=labels)
+comparison_fig = compare_ess((ts, ess, "approx"), (ts_ref, e_ref_ss, "ref"), labels=labels)
 
 # Data & fig for basis measurements
 Os_comp_basis = create_observables_comp_basis(m)
 labels_basis = [format(i, f"0{m}b") for i in range(len(Os_comp_basis))]
-labels_basis = [r'$0=|00\rangle$', r'$1=|01\rangle$', r'$3=|10\rangle$', r'$2=|11\rangle$']
 ess_basis = measure_rhos(rhos, Os_comp_basis)
 e_ref_ss_basis = measure_rhos(rho_ref_s, Os_comp_basis)
 
-basis_fig = compare_ess(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels=labels_basis)
+
+if m ==1:
+    labels_basis = [r'$|0\rangle\langle0|$', r'$|1\rangle\langle1|$']
+    fancy_fig = fancy_fig_1(approx = (ts, ess_basis, "approx"), ref = (ts_ref, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+else:
+    labels_basis = [r'$|00\rangle$', r'$|01\rangle$', r'$|10\rangle$', r'$|11\rangle$']
+    fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts_ref, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+
+basis_fig = compare_ess(approx = (ts, ess_basis, "approx"), ref = (ts_ref, e_ref_ss_basis, "ref"), labels=labels_basis)
 error_fig = error_evolution(errors)
 
 if save_results:
-    names = ["Pauli_evolution", "01_evolution", "Training error"]
-    save_figs([comparison_fig, basis_fig, error_fig], results_path, names)
+    names = ["Pauli_evolution", "01_evolution", "Training error", "fancy_fig"]
+    save_figs([comparison_fig, basis_fig, error_fig, fancy_fig], results_path, names)
 
 
 #%% Sanity check on training data

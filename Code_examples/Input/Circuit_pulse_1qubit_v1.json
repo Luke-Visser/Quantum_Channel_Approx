@@ -1,6 +1,6 @@
 {
     "m": 1,
-    "layout": "circular",
+    "layout": "old_circular",
     "loss_type": "paulis",
     "distance": 0.85,
     "cutoff": 4,
@@ -9,7 +9,7 @@
     "method": "pulse",
     "control_H": "realrotations+11",
     "driving_H": "rydberg11",
-    "lambdapar": 10e-5,
-    "Zdt": 301,
-    "t_max": 15
+    "lambdapar": 0,
+    "Zdt": 101,
+    "t_max": 10
 }

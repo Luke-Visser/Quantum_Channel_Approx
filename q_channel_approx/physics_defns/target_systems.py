@@ -182,12 +182,25 @@ class TFIMSystem(TargetSystem):
     j_en (float): neighbour-neighbour coupling strength
 
     h_en (float): Transverse magnetic field strength
+    
+    gammas (tuple[float]): the decay strength of the qubits
+    Note: length must equal number of qubits m
     """
-
+    ryd_interaction: float
+    
     j_en: float
     h_en: float
     gammas: tuple[float]
-
+    
+    def validate_gammas(self):
+        """Validate that enough omegas have been provided to model m qubit target system."""
+        if self.verbose:
+            print("    validating omegas and gammas...")
+            
+        if self.m != len(self.gammas):
+            raise ValueError(
+                f"wrong amount of gammas for {self.m} qubit target system: {self.gammas}"
+            )
 
 
 @dataclass
@@ -260,6 +273,15 @@ def target_system_fac(**kwargs):
             except KeyError:
                 raise KeyError(f"Missing variables in input file for system {channel_name}")
             return DecaySystempm(ryd_interaction=ryd_interaction, omegas=omegas, m=m, gammas=gammas)
+        
+        case "Ising":
+            try:
+                ryd_interaction = kwargs['ryd_interaction']
+                ham = kwargs['b_and_j']
+                gammas = kwargs['gammas']
+            except KeyError:
+                raise KeyError(f"Missing variables in input file for system {channel_name}")
+            return TFIMSystem(ryd_interaction=ryd_interaction, h_en = ham[0], j_en = ham[1], m=m, gammas=gammas)
         
         case _:
             print(f"layout {channel_name} unknown.")

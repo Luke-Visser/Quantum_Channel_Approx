@@ -85,7 +85,11 @@ def random_rho0s(m: int, L: int, seed: int = None) -> list[qt.Qobj]:
 def deterministic_rho0s(m: int, L: int, seed: int = None) -> list[qt.Qobj]:
     ket0 = qt.states.basis(2,0)
     ket1 = qt.states.basis(2,1)
-    if m == 2:
+    if m == 1:
+        basis = [ket0, ket1]
+        superpositions = [ket0*a**(1/2)+ket1*(1-a)**(1/2) for a in np.linspace(0,1,L-2)]
+        rho0s = basis+ superpositions
+    elif m == 2:
         basis = [qt.tensor(ket0, ket0), qt.tensor(ket0, ket1), qt.tensor(ket1, ket0), qt.tensor(ket1, ket1)]
         superpositions = [(a+b)*(2)**(-1/2) for idx, a in enumerate(basis) for b in basis[idx + 1:]]
         rho0s = basis+superpositions
@@ -137,6 +141,7 @@ def solve_lindblad_rho0s(
     delta_t: float,
     N: int,
     s: TargetSystem,
+    ham: bool = False
 ) -> tuple[np.ndarray, np.ndarray]:
     """Evolve all `rho0s` for `N` timesteps of `delta_t` according the
     Lindblad equation with Hamiltonian defined by `s` and using
@@ -157,7 +162,10 @@ def solve_lindblad_rho0s(
     """
 
     H = create_hamiltonian(s)
-    jump_opers = create_jump_opers(s)
+    if ham:
+        jump_opers = None
+    else:
+        jump_opers = create_jump_opers(s)
 
     L = len(rho0s)
     dims, _ = rho0s[0].shape
@@ -238,6 +246,36 @@ def mk_training_data(rhoss: np.ndarray, Os: Observables) -> TrainingData:
 
     rho0s = rhoss[0, :, :, :]
     Esss = measure_rhoss(rhoss, Os())
+
+    return TrainingData(Os, rho0s, Esss)
+
+def mk_training_data_comp(rhoss: np.ndarray, Os: Observables) -> TrainingData:
+    """Create training data object from a matrix of states where each row
+    gives the evolution of its zeroth state and a list of observables.
+    Returns training data for hamiltonian approximation, by using only one timestep
+    and creating separate data from the further timesteps.
+    Each timestep of each initial rho becomes a new initial rho, with the next 
+    timestep the next evolution
+
+    Args:
+        rhoss (np.ndarray): matrix of states
+        Os (list[qt.Qobj]): list of observables
+
+    Returns:
+        TrainingData: the corresponding TrainingData object
+        which can be used to optimize a gate sequence.
+    """
+    
+    n,l,d,_ = rhoss.shape
+    print(rhoss.shape)
+    print(rhoss[:-1].shape)
+    print(rhoss[1:].shape)
+    rhoss = np.array([rhoss[:-1].reshape((n-1)*l,d,d), rhoss[1:].reshape((n-1)*l,d,d)])
+
+    rho0s = rhoss[0, :, :, :]
+    Esss = measure_rhoss(rhoss, Os())
+    
+        
 
     return TrainingData(Os, rho0s, Esss)
 

@@ -99,7 +99,8 @@ def unitary_pulsed_fac(
         control_H: str, 
         driving_H: str, 
         Zdt: int, 
-        t_max: float
+        t_max: float,
+        U_comp = None
         ) -> PulseCircuit:
     
     m = qubit_layout.m + qubit_layout.n_ancilla
@@ -107,8 +108,12 @@ def unitary_pulsed_fac(
     control_H = control_H_fac(m, control_H)
     driving_H = driving_H_fac(m, driving_H, qubit_layout)
     operations = (control_H, driving_H)
-    
-    m = len(control_H[0,0].dims[0])
+
+    if U_comp is None:
+        U_comp = np.eye(2**m)
+    elif U_comp.shape[0] != 2**m:
+        n = U_comp.shape[0].bit_length()-1
+        U_comp = np.kron(U_comp, np.eye(2**(m-n)))
     
     def unitary(theta: np.array):
         """
@@ -145,7 +150,7 @@ def unitary_pulsed_fac(
         U = qt.propagator(H, t = np.linspace(0, t_max, len(argsc[0,:,0])+1), 
                           options=options,args = {"_step_func_coeff": True})
 
-        return U[-1].full()
+        return U_comp @ U[-1].full()
     
     def unitary_full(theta: np.array):
         """
@@ -182,6 +187,6 @@ def unitary_pulsed_fac(
         U_list = qt.propagator(H, t = np.linspace(0, t_max, len(argsc[0,:,0])+1), 
                           options=options,args = {"_step_func_coeff": True})
 
-        return np.array([U.full() for U in U_list])
+        return np.array([U_comp @ U.full() for U in U_list])
     
     return PulseCircuit(unitary, unitary_full, qubit_layout, Zdt, t_max, operations)

@@ -59,7 +59,9 @@ path1 = 'C:\\Users\\20168723\\OneDrive - TU Eindhoven\\TUe PhD\\Code\\Quantum_Ch
 folder = "1QubitDecayPM_long_2024-09-30_time_11-50-29"
 #folder = "4level_test_2024-10-08_time_10-41-36"
 #folder = "4level_basisrho0_reverse_2024-10-08_time_13-31-17"
-#folder = "4level_basisrho0_2024-10-08_time_10-41-36"
+folder = "4level_basisrho0_2024-10-08_time_10-41-36"
+#folder = "2decay2024-10-11_time_16-36-15"
+#folder = "1decay_ham2024-11-06_time_16-20-08"
 path_loading = os.path.join(path1, folder, 'simulation_results.xlsx')
 all_pars, theta_opt, errors = load_data(path_loading)
 channel_pars = all_pars
@@ -110,7 +112,8 @@ gradcircuit = gradCircuit_fac(circuit, training_data, circuit_pars["loss_type"],
 # nice seeds for 4level: 5, 9
 time_reps = 20
 prediction_seed = 5
-rho0 = rho_rand_haar(m, prediction_seed)
+#rho0 = rho_rand_haar(m, prediction_seed)
+rho0 = rho0s[2]
 
 # Evolution function rho
 def evolve_n_times(n: int, rho):
@@ -136,16 +139,23 @@ comparison_fig = compare_ess(approx = (ts, ess, "approx"), ref= (ts, e_ref_ss, "
 
 # Data & fig for basis measurements
 Os_comp_basis = create_observables_comp_basis(m)
-labels_basis = [format(i, f"0{m}b") for i in range(len(Os_comp_basis))]
-labels_basis = [r'$0=|00\rangle$', r'$1=|01\rangle$', r'$3=|10\rangle$', r'$2=|11\rangle$']
-#labels_basis = [r'$0=|0\rangle$', r'$1=|1\rangle$']
 ess_basis = measure_rhos(rhos, Os_comp_basis)
 e_ref_ss_basis = measure_rhos(rho_ref_s, Os_comp_basis)
 
+if m == 1:
+    labels_basis = [r'$|0\rangle\langle0|$', r'$|1\rangle\langle1|$']
+    fancy_fig = fancy_fig_1(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+elif m==2:
+    #labels_basis = [r'$0=|00\rangle$', r'$1=|01\rangle$', r'$3=|10\rangle$', r'$2=|11\rangle$']
+    labels_basis = [r'$|00\rangle$', r'$|01\rangle$', r'$|10\rangle$', r'$|11\rangle$']
+    fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+else:
+    labels_basis = [format(i, f"0{m}b") for i in range(len(Os_comp_basis))]
+    fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+
+
 basis_fig = compare_ess(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels=labels_basis)
 error_fig = error_evolution(errors)
-
-fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
 
 if save_results:
     names = ["Pauli_evolution", "01_evolution", "Training error", "Combined_figure"]

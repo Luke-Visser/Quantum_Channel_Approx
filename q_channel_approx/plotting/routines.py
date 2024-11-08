@@ -338,7 +338,10 @@ def fancy_fig_1(ref, approx, labels: list[str], error, pulses):
 
     
     # Training error figure
-    ax2.plot(range(1, len(error)), error[1:,0], color = 'gray', linewidth = 3)
+    #ax2.plot(range(1, len(error)), error[1:,0], color = 'gray', linewidth = 3)
+    ax2.plot(range(1, len(error)), error[1:,1], "-", color = 'gray', linewidth = 3, label = "Direct")
+    ax2.plot(range(1, 218), error[1:218,0], "--", color = 'gray', linewidth = 3, label = "Split")
+    legend2 = ax2.legend(loc = 'upper left', bbox_to_anchor = (0.05,0.95))
     ax2.set_yscale('log')
     ax2.set_ylabel(r'$J_1(U)$ ')
     ax2.set_xlabel('Iteration')
@@ -353,8 +356,11 @@ def fancy_fig_1(ref, approx, labels: list[str], error, pulses):
     
     geom_x = [0.10,0.25,0.175]
     geom_y = [0.25,0.25,0.07]
-    ax2.text(0.25, 0.10, r'$R=1.0\mu$m', transform=ax2.transAxes, fontsize = 12)
-    ax2.text(0.07, 0.32, 'Qubit layout', transform=ax2.transAxes, fontsize = 12)
+    
+    geom_x = [0.50,0.65,0.575]
+    geom_y = [0.75,0.75,0.57]
+    ax2.text(0.47, 0.82, 'Qubit layout', transform=ax2.transAxes, fontsize = 12)
+    ax2.text(0.65, 0.60, r'$R=1.0\mu$m', transform=ax2.transAxes, fontsize = 12)
     
     
     dot_colours = colours
@@ -366,28 +372,30 @@ def fancy_fig_1(ref, approx, labels: list[str], error, pulses):
     for k in range(len(geom_x)):
         ax2.scatter(geom_x,geom_y, color = dot_colours[0:len(geom_x)], transform = ax2.transAxes, zorder = 2, s = 70)
         legend_elements.append(Line2D([0],[0], color = colours[k%6], ls = '-', lw = 2, label = rf'$q_{k}$'.format(k)))
-    legend_elements.append(Line2D([0],[0], color = 'gray', ls = '-', lw = 2, label = 'coup'))
-    legend_elements.append(Line2D([0],[0], color = 'gray', ls = '--', lw = 2, label = 'det'))    
+    #legend_elements.append(Line2D([0],[0], color = 'gray', ls = '-', lw = 2, label = 'coup'))
+    #legend_elements.append(Line2D([0],[0], color = 'gray', ls = '--', lw = 2, label = 'det'))    
 
-    ax2.legend(handles = legend_elements, loc = 'upper left', bbox_to_anchor = (0.05, 0.95))
+    ax2.legend(handles = legend_elements, loc = 'upper right', bbox_to_anchor = (0.95, 0.95))
+    ax2.add_artist(legend2)
 
     
-    # Pulses figure as inset subplot
-    #ax3 = plt.axes([0.75, 0.53, 0.20, 0.35])
-    ax3 = plt.axes([0.80, 0.53, 0.15, 0.35])
-    m_all, Zdt, _ = pulses.shape
-    tmax = 15
-    m_all = m_all//2
-    x_range = np.linspace(0, tmax, Zdt)
-    
-    legend_elements = []
-    for k in range(m_all):
-        ax3.plot(x_range, pulses[k,:,0], '-', color = colours[k%6])
-        ax3.plot(x_range, pulses[m_all+k,:,0], '--', color = colours[k%6])
-
-    ax3.set_xlabel(r'$\tau$ [ms]')
-    ax3.set_xlim([0,tmax])
-    ax3.set_ylabel(r'$z_r$ [kHz]')
+# =============================================================================
+#     # Pulses figure as inset subplot
+#     #ax3 = plt.axes([0.75, 0.53, 0.20, 0.35])
+#     ax3 = plt.axes([0.80, 0.53, 0.15, 0.35])
+#     m_all, Zdt, _ = pulses.shape
+#     tmax = 15
+#     m_all = m_all//2
+#     x_range = np.linspace(0, tmax, Zdt)
+#     
+#     for k in range(m_all):
+#         ax3.plot(x_range, pulses[k,:,0], '-', color = colours[k%6])
+#         ax3.plot(x_range, pulses[m_all+k,:,0], '--', color = colours[k%6])
+# 
+#     ax3.set_xlabel(r'$\tau$ [ms]')
+#     ax3.set_xlim([0,tmax])
+#     ax3.set_ylabel(r'$z_r$ [kHz]')
+# =============================================================================
     
     # Labels (a) and (b) and qubit distance
     ax1.text(-0.18, 0.95, '(b)', transform=ax1.transAxes, fontsize = 16)

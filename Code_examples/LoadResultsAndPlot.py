@@ -185,6 +185,7 @@ def evolve_all_n_times(n: int, rho_input):
     for i in range(n):
         for j, rho in enumerate(rhos_ev[i]):
             rhos_ev[i+1,j] = phi(rho=rhos_ev[i,j])
+            rhos_ev[i+1,j] = rhos_ev[i+1,j]/sum(sc.linalg.eig(rhos_ev[i+1,j])[0])
     return np.array(rhos_ev)
 
 # Data for evolving pauli measurements

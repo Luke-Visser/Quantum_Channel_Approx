@@ -45,6 +45,7 @@ from q_channel_approx.plotting.routines import (
     save_figs,
     save_data,
     load_data,
+    fancy_fig_1,
     fancy_fig_2)
 from q_channel_approx.plotting.observables import create_observables_comp_basis
 
@@ -59,8 +60,10 @@ file_dir = os.getcwd()
 channel_file = "Input\\channel_1decay_v2.json"  
 circuit_file = "Input\\Circuit_pulse_1qubit_v1.json"
 
-channel_file = "Input\\channel_2ising_v1.json"
-circuit_file = "Input\\Circuit_pulse_2qubit_v2.json"
+# =============================================================================
+# channel_file = "Input\\channel_2ising_v1.json"
+# circuit_file = "Input\\Circuit_pulse_2qubit_v2.json"
+# =============================================================================
 
 training_iters = 1000
 
@@ -118,7 +121,7 @@ training_data_comp = mk_training_data_comp(rhoss, Os)
 
 #%% Learn Hamiltonian behaviour
 
-reduced_pars = {**circuit_pars, 'layout': 'comp_only', 'n_depth': 1, 'Zdt': 101, 't_max': 10, 'lambdapar': 10e-4}
+reduced_pars = {**circuit_pars, 'layout': 'comp_only', 'n_depth': 1, 'Zdt': 101, 't_max': 10, 'lambdapar': 0}
 
 qubits_comp = qubitLayout_fac(**reduced_pars)
 qubits_comp.show_layout()
@@ -131,7 +134,7 @@ theta_opt, errors, thetas = optimize_pulse(gradcircuit_comp, training_data_comp,
 
 U_ham = circuit_comp(theta_opt)
 
-#%% Check dilation
+#%% Check Hamiltonian estimate
 pulse_fig = plot_pulses(theta_opt, circuit_comp, reduced_pars['control_H'])
 
 
@@ -170,10 +173,10 @@ e_ref_ss_basis = measure_rhos(rho_ref_s, Os_comp_basis)
 
 basis_fig = compare_ess(approx = (ts, ess_basis, "approx"), ref = (ts_ref, e_ref_ss_basis, "ref"), labels=labels_basis)
 error_fig = error_evolution(errors)
-fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts_ref, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+fancy_fig = fancy_fig_1(approx = (ts, ess_basis, "approx"), ref = (ts_ref, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
 
 if save_results:
-    names = ["Pauli_evolution", "01_evolution", "Training error", "fancy_fig"]
+    names = ["Pauli_evolution_ham", "01_evolution_ham", "Training error_ham", "fancy_fig_ham"]
     save_figs([comparison_fig, basis_fig, error_fig, fancy_fig], results_path, names)
 
 
@@ -234,7 +237,7 @@ e_ref_ss_basis = measure_rhos(rho_ref_s, Os_comp_basis)
 
 basis_fig = compare_ess(approx = (ts, ess_basis, "approx"), ref = (ts_ref, e_ref_ss_basis, "ref"), labels=labels_basis)
 error_fig = error_evolution(errors)
-fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts_ref, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+fancy_fig = fancy_fig_1(approx = (ts, ess_basis, "approx"), ref = (ts_ref, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
 
 if save_results:
     names = ["Pauli_evolution", "01_evolution", "Training error", "fancy_fig"]

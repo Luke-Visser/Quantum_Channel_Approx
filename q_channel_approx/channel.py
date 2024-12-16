@@ -3,7 +3,26 @@ from q_channel_approx.unitary_circuits import GateCircuit
 
 
 def channel_fac(circuit: GateCircuit):
+    """
+    Generates a function phi that inputs 
+        [theta] 
+    and outputs
+        a function approx_phi that inputs 
+            [rho]
+        and outputs
+            Tr_b[U[theta] rho \tensor |0><0|_b U[theta]^\dagger]
 
+    Parameters
+    ----------
+    circuit : GateCircuit
+        The corresponding circuit, determines what theta can be input and the 
+        relation between theta and the resulting unitary U[theta]
+
+    Returns
+    -------
+    function
+
+    """
     unitary, qubits = circuit.U, circuit.qubit_layout
     dims_A = qubits.dims_A
     dims_B = qubits.dims_B
@@ -27,6 +46,23 @@ def channel_fac(circuit: GateCircuit):
 
 
 def evolver_fac(circuit: GateCircuit, N: int):
+    """
+    Same as channel_fac, but the inner function outputs N consecutive applications
+    of the quantum channel
+
+    Parameters
+    ----------
+    circuit : GateCircuit
+        The corresponding circuit, determines what theta can be input and the 
+        relation between theta and the resulting unitary U[theta].
+    N : int
+        The required number of reapplications
+
+    Returns
+    -------
+    function
+
+    """
 
     dims_A = circuit.qubit_layout.dims_A
 

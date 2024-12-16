@@ -53,16 +53,22 @@ timestamp = "{:%Y-%m-%d_time_%H-%M-%S}".format(datetime.now()) # Filenames for s
 file_dir = os.getcwd()
 
 #%% Files and parameters
+
+# Pick a circuit_file and a channel_file to load the parameters for the circuit and approximating channel
+# 1 qubit settings should run relatively quick, while 2 qubit settings take a bit longer
 #circuit_file = "Input\\Circuit_pulse_2qubit_v2.json" 
 #channel_file = "Input\\channel_2decay_v1.json"
 
-channel_file = "Input\\channel_1decay_v2.json"  
-circuit_file = "Input\\Circuit_pulse_1qubit_v1.json"
+#channel_file = "Input\\channel_1decay_v2.json"  
+#circuit_file = "Input\\Circuit_pulse_1qubit_v1.json"
 
-#channel_file = "Input\\channel_2ising_v1.json"
-#circuit_file = "Input\\Circuit_pulse_2qubit_v2.json"
+channel_file = "Input\\channel_2ising_v1.json"
+circuit_file = "Input\\Circuit_pulse_2qubit_v2.json"
 
-training_iters = 1000
+# Set the number of training iterations
+# for 1 qubit, 100 iterations takes about 30 seconds and can already give some reasonable results
+# for 2 qubits, 100 iterations takes about 10 minutes and are generally quite bad
+training_iters = 100
 
 # read circuit settings
 f = open(circuit_file)

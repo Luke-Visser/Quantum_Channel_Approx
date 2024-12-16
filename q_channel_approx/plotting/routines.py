@@ -340,7 +340,7 @@ def fancy_fig_1(ref, approx, labels: list[str], error, pulses):
     # Training error figure
     #ax2.plot(range(1, len(error)), error[1:,0], color = 'gray', linewidth = 3)
     ax2.plot(range(1, len(error)), error[1:,1], "-", color = 'gray', linewidth = 3, label = "Direct")
-    ax2.plot(range(1, 218), error[1:218,0], "--", color = 'gray', linewidth = 3, label = "Split")
+    #ax2.plot(range(1, 218), error[1:218,0], "--", color = 'gray', linewidth = 3, label = "Split")
     legend2 = ax2.legend(loc = 'upper left', bbox_to_anchor = (0.05,0.95))
     ax2.set_yscale('log')
     ax2.set_ylabel(r'$J_1(U)$ ')

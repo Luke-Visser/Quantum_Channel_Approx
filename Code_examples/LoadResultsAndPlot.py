@@ -52,13 +52,15 @@ file_dir = os.getcwd()
 
 save_results = False
 
-#%% Load data
+#%% Load data from older runs.
 
+# Select your own path to the code here
 path1 = 'C:\\Users\\20168723\\OneDrive - TU Eindhoven\\TUe PhD\\Code\\Quantum_Channel_Approx_V2\\Code_examples\\Results'
+
+# Pick a sub folder of the results folder to load and plot
 #folder = "4level_long_2024-09-30_time_11-23-20"
-folder = "1QubitDecayPM_long_2024-09-30_time_11-50-29"
+#folder = "1QubitDecayPM_long_2024-09-30_time_11-50-29"
 #folder = "4level_test_2024-10-08_time_10-41-36"
-#folder = "4level_basisrho0_reverse_2024-10-08_time_13-31-17"
 folder = "4level_basisrho0_2024-10-08_time_10-41-36"
 #folder = "2decay2024-10-11_time_16-36-15"
 #folder = "1decay_ham2024-11-06_time_16-20-08"
@@ -144,22 +146,22 @@ e_ref_ss_basis = measure_rhos(rho_ref_s, Os_comp_basis)
 
 if m == 1:
     labels_basis = [r'$|0\rangle\langle0|$', r'$|1\rangle\langle1|$']
-    fancy_fig = fancy_fig_1(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+    #fancy_fig = fancy_fig_1(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
 elif m==2:
     #labels_basis = [r'$0=|00\rangle$', r'$1=|01\rangle$', r'$3=|10\rangle$', r'$2=|11\rangle$']
     labels_basis = [r'$|00\rangle$', r'$|01\rangle$', r'$|10\rangle$', r'$|11\rangle$']
-    fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+    #fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
 else:
     labels_basis = [format(i, f"0{m}b") for i in range(len(Os_comp_basis))]
-    fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
+    #fancy_fig = fancy_fig_2(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels = labels_basis, error = errors, pulses = theta_opt)
 
 
 basis_fig = compare_ess(approx = (ts, ess_basis, "approx"), ref = (ts, e_ref_ss_basis, "ref"), labels=labels_basis)
 error_fig = error_evolution(errors)
 
 if save_results:
-    names = ["Pauli_evolution", "01_evolution", "Training error", "Combined_figure"]
-    save_figs([comparison_fig, basis_fig, error_fig, fancy_fig], results_path, names)
+    names = ["Pauli_evolution", "01_evolution", "Training error"]
+    save_figs([comparison_fig, basis_fig, error_fig], results_path, names)
 
 
 #%% Predict on multiple rhos for Bures distance
